@@ -1,0 +1,6 @@
+{
+  "name": "Ghost Browser",
+  "description": "Ultra-fast, privacy-first lightweight browser with Chrome styling, ad blocker, ghost mode, extension support, tab grouping, script controls, and low RAM optimization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
