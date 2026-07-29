@@ -126,12 +126,39 @@ fun GhostAboutModal(
                     )
 
                     Surface(
+                        color = Color(0xFFFFB800).copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.padding(top = 6.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Bolt,
+                                contentDescription = "Pro",
+                                tint = Color(0xFFFFB800),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "FULL PRO UNLOCKED ⚡",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFFFB800)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Surface(
                         color = ShieldActiveGreen.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 2.dp)
                     ) {
                         Text(
-                            text = "v1.0 (Initial Release) • Built with Jetpack Compose",
+                            text = "v1.0 Pro Edition • Unlimited Features Activated",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = ShieldActiveGreen,

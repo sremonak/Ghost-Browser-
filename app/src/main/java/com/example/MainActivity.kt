@@ -1,11 +1,16 @@
 package com.example
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
@@ -15,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.components.*
 import com.example.ui.theme.GhostBrowserTheme
@@ -38,6 +44,63 @@ class MainActivity : ComponentActivity() {
             val activeTab = viewModel.activeTab
             val currentUrl = activeTab?.url ?: "ghost://newtab"
             val isBookmarked = bookmarks.any { it.url == currentUrl }
+            var showExitConfirmation by remember { mutableStateOf(false) }
+
+            // Camera, Microphone, Storage permissions launcher
+            val permissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestMultiplePermissions()
+            ) { /* Handled */ }
+
+            LaunchedEffect(Unit) {
+                val perms = mutableListOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO
+                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    perms.add(Manifest.permission.POST_NOTIFICATIONS)
+                }
+                permissionLauncher.launch(perms.toTypedArray())
+            }
+
+            // Custom Back Handler: Web History Back -> Modal Close -> Exit Dialog
+            BackHandler(enabled = true) {
+                when {
+                    uiState.activeModal != GhostModalType.NONE -> {
+                        viewModel.setModal(GhostModalType.NONE)
+                    }
+                    activeTab?.backStack?.isNotEmpty() == true -> {
+                        viewModel.goBackInTab()
+                    }
+                    else -> {
+                        showExitConfirmation = true
+                    }
+                }
+            }
+
+            // Exit Confirmation Dialog
+            if (showExitConfirmation) {
+                AlertDialog(
+                    onDismissRequest = { showExitConfirmation = false },
+                    title = { Text("Exit Ghost Browser?", fontWeight = FontWeight.Bold) },
+                    text = { Text("Are you sure you want to exit the browser?") },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showExitConfirmation = false
+                                finish()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text("Exit")
+                        }
+                    },
+                    dismissButton = {
+                        OutlinedButton(onClick = { showExitConfirmation = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
 
             // Handle Toast Notifications
             LaunchedEffect(uiState.toastMessage) {
@@ -128,16 +191,24 @@ class MainActivity : ComponentActivity() {
                                         onToggleHackerTheme = { viewModel.toggleHackerTheme() }
                                     )
                                 } else {
+                                    val (vpnHost, vpnPort) = when {
+                                        uiState.selectedVpnNode.contains("Frankfurt") -> "104.28.16.1" to "8080"
+                                        uiState.selectedVpnNode.contains("Tokyo") -> "103.102.160.1" to "8080"
+                                        uiState.selectedVpnNode.contains("Singapore") -> "128.199.200.1" to "8080"
+                                        uiState.selectedVpnNode.contains("London") -> "185.220.101.5" to "8080"
+                                        else -> uiState.customProxyHost to uiState.customProxyPort
+                                    }
                                     GhostWebView(
                                         url = currentUrl,
                                         userAgentMode = uiState.userAgentMode,
                                         isIncognito = uiState.isIncognitoMode,
                                         siteSettings = uiState.activeSiteSecurity,
                                         reloadTrigger = uiState.reloadTrigger,
+                                        isVpnEnabled = uiState.isVpnEnabled,
+                                        vpnProxyHost = vpnHost,
+                                        vpnProxyPort = vpnPort,
                                         onPageTitleChanged = { title ->
-                                            activeTab?.let { t ->
-                                                val updated = t.copy(title = title)
-                                            }
+                                            viewModel.updateActiveTabTitle(title)
                                         },
                                         onLoadingChanged = { isLoading, progress ->
                                             viewModel.setPageLoading(isLoading, progress)

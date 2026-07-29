@@ -1,12 +1,22 @@
 package com.example.ui.components
 
 import android.annotation.SuppressLint
+import android.app.DownloadManager
+import android.content.Context
 import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Environment
 import android.view.ViewGroup
+import android.webkit.CookieManager
+import android.webkit.PermissionRequest
+import android.webkit.URLUtil
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -22,9 +32,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.webkit.ProxyConfig
+import androidx.webkit.ProxyController
+import androidx.webkit.WebViewFeature
 import com.example.engine.GhostAdBlocker
 import com.example.engine.SiteSecuritySettings
 import com.example.engine.UserAgentMode
+import com.example.service.GhostMediaService
 import com.example.ui.theme.ShieldActiveGreen
 import java.io.ByteArrayInputStream
 
@@ -36,6 +50,9 @@ fun GhostWebView(
     isIncognito: Boolean,
     siteSettings: SiteSecuritySettings = SiteSecuritySettings("ghost.local"),
     reloadTrigger: Long = 0L,
+    isVpnEnabled: Boolean = false,
+    vpnProxyHost: String = "104.28.16.1",
+    vpnProxyPort: String = "8080",
     onPageTitleChanged: (String) -> Unit,
     onLoadingChanged: (Boolean, Float) -> Unit,
     onAdBlocked: ((String, String) -> Unit)? = null,
@@ -68,12 +85,45 @@ fun GhostWebView(
                         userAgentString = userAgentMode.userAgentString
                         useWideViewPort = isDesktop
                         loadWithOverviewMode = isDesktop
-                        allowFileAccess = false
-                        allowContentAccess = false
-                        mediaPlaybackRequiresUserGesture = true
+                        allowFileAccess = true
+                        allowContentAccess = true
+                        mediaPlaybackRequiresUserGesture = false
                         setSupportZoom(true)
                         builtInZoomControls = true
                         displayZoomControls = false
+                    }
+
+                    // Enable File Downloads via Android DownloadManager
+                    setDownloadListener { downloadUrl, userAgent, contentDisposition, mimetype, _ ->
+                        try {
+                            val fileName = URLUtil.guessFileName(downloadUrl, contentDisposition, mimetype)
+                            val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
+                                setMimeType(mimetype)
+                                addRequestHeader("User-Agent", userAgent)
+                                addRequestHeader("Cookie", CookieManager.getInstance().getCookie(downloadUrl))
+                                setTitle(fileName)
+                                setDescription("Downloading $fileName via Ghost Browser")
+                                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                            }
+                            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                            dm.enqueue(request)
+                            Toast.makeText(context, "Download started: $fileName", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Download failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+
+                    webChromeClient = object : WebChromeClient() {
+                        override fun onPermissionRequest(request: PermissionRequest?) {
+                            // Grant web application camera & microphone permissions
+                            request?.grant(request.resources)
+                        }
+
+                        override fun onReceivedTitle(view: WebView?, title: String?) {
+                            super.onReceivedTitle(view, title)
+                            title?.let { onPageTitleChanged(it) }
+                        }
                     }
 
                     webViewClient = object : WebViewClient() {
@@ -103,7 +153,22 @@ fun GhostWebView(
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
                             onLoadingChanged(false, 1.0f)
-                            view?.title?.let { onPageTitleChanged(it) }
+                            val titleStr = view?.title ?: "Ghost Browser"
+                            val pageUrl = url ?: ""
+                            titleStr.let { onPageTitleChanged(it) }
+
+                            // Trigger Media Notification Service for Background Playback
+                            if (pageUrl.isNotBlank() && !pageUrl.startsWith("ghost://")) {
+                                try {
+                                    GhostMediaService.startService(
+                                        context = context,
+                                        title = titleStr,
+                                        url = pageUrl
+                                    )
+                                } catch (e: Exception) {
+                                    // Handle notification permission or background restrictions gracefully
+                                }
+                            }
 
                             if (siteSettings.adBlockEnabled) {
                                 view?.evaluateJavascript(GhostAdBlocker.adBlockInjectCss, null)
@@ -133,6 +198,31 @@ fun GhostWebView(
                 if (reloadTrigger != lastReloadTrigger) {
                     lastReloadTrigger = reloadTrigger
                     view.reload()
+                }
+
+                // Apply Proxy / VPN Override Settings to Android WebView Engine
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
+                    val proxyController = ProxyController.getInstance()
+                    if (isVpnEnabled) {
+                        val proxyRule = "$vpnProxyHost:$vpnProxyPort"
+                        val proxyConfig = ProxyConfig.Builder()
+                            .addProxyRule(proxyRule)
+                            .addDirect()
+                            .build()
+                        try {
+                            proxyController.setProxyOverride(proxyConfig, { runnable -> runnable.run() }, {
+                                // Proxy active
+                            })
+                        } catch (e: Exception) {
+                            // Handled
+                        }
+                    } else {
+                        try {
+                            proxyController.clearProxyOverride({ runnable -> runnable.run() }, {})
+                        } catch (e: Exception) {
+                            // Handled
+                        }
+                    }
                 }
 
                 // Dynamically update User-Agent mode

@@ -230,6 +230,17 @@ class GhostBrowserViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    fun updateActiveTabTitle(title: String) {
+        val activeId = uiState.value.activeTabId
+        _uiState.update { state ->
+            state.copy(
+                tabs = state.tabs.map { tab ->
+                    if (tab.id == activeId) tab.copy(title = title) else tab
+                }
+            )
+        }
+    }
+
     fun setIncognitoMode(enabled: Boolean) {
         _uiState.update { it.copy(isIncognitoMode = enabled) }
         val incognitoTabs = uiState.value.tabs.filter { it.isIncognito == enabled }
