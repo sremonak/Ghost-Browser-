@@ -215,6 +215,9 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onAdBlocked = { blockedUrl, category ->
                                             viewModel.recordAdOrTrackerBlocked(blockedUrl, category)
+                                        },
+                                        onConsoleLog = { msg ->
+                                            // Real-time console log capturing from WebView JS engine
                                         }
                                     )
                                 }

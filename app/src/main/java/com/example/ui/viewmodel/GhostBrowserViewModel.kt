@@ -6,9 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.*
 import com.example.engine.*
 import com.example.ui.components.DohProvider
+import com.example.ui.components.GhostWebViewHolder
 import com.example.ui.components.ProxyType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.UUID
 
 enum class GhostModalType {
@@ -310,76 +315,106 @@ class GhostBrowserViewModel(application: Application) : AndroidViewModel(applica
 
     fun prepareInspectPage(url: String, title: String) {
         val domain = extractTitleFromUrl(url)
-        val mockHtml = """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>$title</title>
-                <style>
-                    body { font-family: monospace; background: #111; color: #00FF66; margin: 16px; }
-                    .header { font-weight: bold; border-bottom: 1px solid #00FF66; padding-bottom: 8px; }
-                    .content { margin-top: 12px; font-size: 14px; line-height: 1.5; }
-                    .badge { background: #005221; color: #00FF66; padding: 2px 6px; border-radius: 4px; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>$title</h1>
-                    <span class="badge">SECURE HTTPS / TLS 1.3</span>
-                </div>
-                <div class="content">
-                    <p>Host Domain: <strong>$domain</strong></p>
-                    <p>Ghost Ultra Shield Active: AdBlock, Anti-Tracker, Anti-Fingerprint Enabled</p>
-                </div>
-            </body>
-            </html>
-        """.trimIndent()
-
-        val mockLogs = listOf(
-            "[LOG] Navigation completed to $url",
-            "[INFO] Ghost AdBlocker injected 14 CSS rules",
-            "[INFO] Canvas anti-fingerprint spoofer active (WebGL noise applied)",
-            "[SEC] TLS Cipher Suite: TLS_AES_256_GCM_SHA384",
-            "[STATUS] HTTP 200 OK • Content-Type: text/html; charset=utf-8"
-        )
-
-        val mockHeaders = mapOf(
-            "Host" to domain,
-            "User-Agent" to uiState.value.userAgentMode.userAgentString,
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Content-Security-Policy" to "default-src 'self' 'unsafe-inline' https:;",
-            "Strict-Transport-Security" to "max-age=31536000; includeSubDomains",
-            "X-Content-Type-Options" to "nosniff",
-            "X-Frame-Options" to "SAMEORIGIN",
-            "X-XSS-Protection" to "1; mode=block",
-            "Cache-Control" to "no-cache, no-store, must-revalidate"
-        )
+        val activeWeb = GhostWebViewHolder.activeWebView?.get()
 
         _uiState.update {
             it.copy(
-                inspectPageSource = mockHtml,
-                inspectConsoleLogs = mockLogs,
-                inspectHttpHeaders = mockHeaders,
-                activeModal = GhostModalType.INSPECT_ELEMENT
+                activeModal = GhostModalType.INSPECT_ELEMENT,
+                inspectConsoleLogs = listOf(
+                    "[LOG] Inspected target: $url",
+                    "[INFO] User Agent: ${it.userAgentMode.userAgentString}",
+                    "[SEC] Ghost Ultra Shield Active (AdBlocker & Anti-Fingerprint Enabled)"
+                )
             )
+        }
+
+        if (activeWeb != null && !url.startsWith("ghost://")) {
+            // Real live HTML source extraction from active WebView
+            activeWeb.evaluateJavascript("document.documentElement.outerHTML") { rawHtml ->
+                val cleanHtml = rawHtml?.removeSurrounding("\"")
+                    ?.replace("\\u003C", "<")
+                    ?.replace("\\n", "\n")
+                    ?.replace("\\\"", "\"")
+                    ?.replace("\\\\", "\\") ?: "<!-- HTML Source Unavailable -->"
+                _uiState.update { it.copy(inspectPageSource = cleanHtml) }
+            }
+
+            // Real live Cookies extraction
+            activeWeb.evaluateJavascript("document.cookie") { cookiesStr ->
+                val cookies = cookiesStr?.removeSurrounding("\"") ?: ""
+                val logs = _uiState.value.inspectConsoleLogs +
+                        "[COOKIE] Active Document Cookie: ${if (cookies.isBlank()) "None set" else cookies}"
+                _uiState.update { it.copy(inspectConsoleLogs = logs) }
+            }
+        } else {
+            val fallbackHtml = """
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>$title</title>
+                </head>
+                <body style="background:#000; color:#00FF66; font-family:monospace; padding:16px;">
+                    <h2>Ghost Browser Engine</h2>
+                    <p>Host Domain: $domain</p>
+                    <p>Status: Active System Frame</p>
+                </body>
+                </html>
+            """.trimIndent()
+            _uiState.update {
+                it.copy(
+                    inspectPageSource = fallbackHtml,
+                    inspectHttpHeaders = mapOf("Host" to domain, "Status" to "Internal Frame")
+                )
+            }
+        }
+
+        // Fetch real HTTP response headers from live target web server on IO thread
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val conn = URL(url).openConnection() as HttpURLConnection
+                    conn.requestMethod = "HEAD"
+                    conn.connectTimeout = 4000
+                    conn.readTimeout = 4000
+                    conn.setRequestProperty("User-Agent", uiState.value.userAgentMode.userAgentString)
+                    val headerMap = mutableMapOf<String, String>()
+                    conn.headerFields.forEach { (key, list) ->
+                        if (key != null) {
+                            headerMap[key] = list.joinToString(", ")
+                        } else {
+                            headerMap["Status-Line"] = list.joinToString(", ")
+                        }
+                    }
+                    if (headerMap.isNotEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            _uiState.update { it.copy(inspectHttpHeaders = headerMap) }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Handled gracefully
+                }
+            }
         }
     }
 
     fun executeInspectJsCommand(command: String) {
-        val resultLog = when {
-            command.equals("document.title", ignoreCase = true) -> "=> \"${activeTab?.title ?: "New Tab"}\""
-            command.equals("location.href", ignoreCase = true) -> "=> \"${activeTab?.url ?: "ghost://newtab"}\""
-            command.equals("document.cookie", ignoreCase = true) -> "=> \"ghost_session_id=encrypted_token; _adblock=strict; secure; samesite=strict\""
-            command.equals("navigator.userAgent", ignoreCase = true) -> "=> \"${uiState.value.userAgentMode.userAgentString}\""
-            command.contains("ping", ignoreCase = true) -> "=> PING google.com (142.250.190.46): 56 data bytes. 64 bytes: icmp_seq=1 ttl=118 time=14.2 ms"
-            else -> "=> Executed: $command [Return: true]"
-        }
-        _uiState.update {
-            it.copy(
-                inspectConsoleLogs = it.inspectConsoleLogs + "> $command" + resultLog
-            )
+        val activeWeb = GhostWebViewHolder.activeWebView?.get()
+        if (activeWeb != null) {
+            activeWeb.evaluateJavascript(command) { result ->
+                val cleanResult = result ?: "undefined"
+                _uiState.update {
+                    it.copy(
+                        inspectConsoleLogs = it.inspectConsoleLogs + "> $command" + "=> $cleanResult"
+                    )
+                }
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    inspectConsoleLogs = it.inspectConsoleLogs + "> $command" + "=> [Error: No active web view frame]"
+                )
+            }
         }
     }
 

@@ -209,42 +209,88 @@ fun InspectElementModal(
                 }
 
                 1 -> {
-                    // DOM Tree Structure Inspector
-                    Text(
-                        text = "EXPLORE DOM NODES",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        color = if (isHackerTheme) HackerGreen else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    // Real DOM Tree Structure Inspector & Live Page Manipulator
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "LIVE DOM TREE & QUICK MANIPULATORS",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            color = if (isHackerTheme) HackerGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Live Manipulation Action Chips
+                    ScrollableTabRow(
+                        selectedTabIndex = -1,
+                        edgePadding = 0.dp,
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = Color.Transparent,
+                        divider = {}
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            AssistChip(
+                                onClick = { onExecuteJs("document.querySelectorAll('input[type=\"password\"]').forEach(i => i.type = 'text')") },
+                                label = { Text("Reveal Passwords 🔓", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                                colors = AssistChipDefaults.assistChipColors(containerColor = mainAccent.copy(alpha = 0.15f), labelColor = mainAccent)
+                            )
+                            AssistChip(
+                                onClick = { onExecuteJs("document.querySelectorAll('a').forEach(a => a.style.outline = '2px dashed #00FF66')") },
+                                label = { Text("Outline Links 🔗", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                                colors = AssistChipDefaults.assistChipColors(containerColor = mainAccent.copy(alpha = 0.15f), labelColor = mainAccent)
+                            )
+                            AssistChip(
+                                onClick = { onExecuteJs("document.body.style.filter = document.body.style.filter ? '' : 'invert(1) hue-rotate(180deg)'") },
+                                label = { Text("Invert Theme 🌙", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                                colors = AssistChipDefaults.assistChipColors(containerColor = mainAccent.copy(alpha = 0.15f), labelColor = mainAccent)
+                            )
+                            AssistChip(
+                                onClick = { onExecuteJs("document.designMode = document.designMode === 'on' ? 'off' : 'on'") },
+                                label = { Text("Toggle Design Mode ✏️", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                                colors = AssistChipDefaults.assistChipColors(containerColor = mainAccent.copy(alpha = 0.15f), labelColor = mainAccent)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val domLines = remember(pageSource) {
+                        pageSource.lines()
+                            .map { it.trim() }
+                            .filter { it.isNotBlank() }
+                            .take(120)
+                    }
 
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(340.dp)
+                            .height(290.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .border(1.dp, if (isHackerTheme) HackerGreen.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
                         color = if (isHackerTheme) Color(0xFF060D08) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                     ) {
                         LazyColumn(
                             modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            item { DomNodeItem("<html lang=\"en\">", level = 0, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("<head>", level = 1, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("<meta charset=\"UTF-8\">", level = 2, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("<title>Ghost Browser Secure Engine</title>", level = 2, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("<script src=\"/ghost-anti-fingerprint.js\"></script>", level = 2, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("</head>", level = 1, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("<body>", level = 1, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("<div class=\"main-container\" id=\"app-root\">", level = 2, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("<header class=\"ghost-header-banner\">", level = 3, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("<h1>Ghost Web Engine Active</h1>", level = 4, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("</header>", level = 3, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("</div>", level = 2, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("</body>", level = 1, isHackerTheme = isHackerTheme) }
-                            item { DomNodeItem("</html>", level = 0, isHackerTheme = isHackerTheme) }
+                            if (domLines.isNotEmpty()) {
+                                items(domLines.size) { idx ->
+                                    val line = domLines[idx]
+                                    val indentLevel = (line.indexOf("<") / 2).coerceIn(0, 5)
+                                    DomNodeItem(line, level = indentLevel, isHackerTheme = isHackerTheme)
+                                }
+                            } else {
+                                item { DomNodeItem("<html lang=\"en\">", level = 0, isHackerTheme = isHackerTheme) }
+                                item { DomNodeItem("<head><title>Ghost Engine</title></head>", level = 1, isHackerTheme = isHackerTheme) }
+                                item { DomNodeItem("<body><div id=\"root\">Live DOM Empty</div></body>", level = 1, isHackerTheme = isHackerTheme) }
+                                item { DomNodeItem("</html>", level = 0, isHackerTheme = isHackerTheme) }
+                            }
                         }
                     }
                 }

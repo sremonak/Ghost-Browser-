@@ -1,10 +1,13 @@
 package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -24,8 +27,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -117,6 +122,26 @@ fun GhostDashboard(
         Brush.verticalGradient(colors = listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.background))
     }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "pulseTransition")
+    val logoPulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "logoPulseScale"
+    )
+    val logoGlowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 0.65f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "logoGlowAlpha"
+    )
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -167,16 +192,17 @@ fun GhostDashboard(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // App Logo & Phantom Header
+        // App Logo & Phantom Header with Pulse Animation
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(80.dp)
+                .size(88.dp)
+                .scale(logoPulseScale)
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            if (isHackerTheme) HackerGreen.copy(alpha = 0.3f) else if (isIncognito) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else PurpleGhostGlow.copy(alpha = 0.3f),
+                            if (isHackerTheme) HackerGreen.copy(alpha = logoGlowAlpha) else if (isIncognito) MaterialTheme.colorScheme.primary.copy(alpha = logoGlowAlpha) else PurpleGhostGlow.copy(alpha = logoGlowAlpha),
                             Color.Transparent
                         )
                     )
@@ -203,16 +229,17 @@ fun GhostDashboard(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Surface(
-                color = ShieldActiveGreen.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(6.dp)
+                color = ShieldActiveGreen.copy(alpha = 0.18f),
+                shape = RoundedCornerShape(6.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, ShieldActiveGreen.copy(alpha = 0.4f))
             ) {
                 Text(
-                    text = if (isHackerTheme) "v2.5 MATRIX" else "LITE",
+                    text = if (isHackerTheme) "v2.5 MATRIX" else "ULTRA PRO",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = if (isHackerTheme) FontFamily.Monospace else FontFamily.Default,
                     color = ShieldActiveGreen,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                 )
             }
         }
@@ -616,11 +643,20 @@ fun SpeedDialCard(
     isHackerTheme: Boolean = false,
     onClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "speedDialScale"
+    )
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .width(72.dp)
-            .clickable { onClick() }
+            .scale(animatedScale)
+            .clickable(interactionSource = interactionSource, indication = null) { onClick() }
     ) {
         Surface(
             modifier = Modifier

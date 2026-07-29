@@ -35,12 +35,17 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.webkit.ProxyConfig
 import androidx.webkit.ProxyController
 import androidx.webkit.WebViewFeature
+import android.webkit.ConsoleMessage
 import com.example.engine.GhostAdBlocker
 import com.example.engine.SiteSecuritySettings
 import com.example.engine.UserAgentMode
-import com.example.service.GhostMediaService
 import com.example.ui.theme.ShieldActiveGreen
 import java.io.ByteArrayInputStream
+import java.lang.ref.WeakReference
+
+object GhostWebViewHolder {
+    var activeWebView: WeakReference<WebView>? = null
+}
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -56,6 +61,7 @@ fun GhostWebView(
     onPageTitleChanged: (String) -> Unit,
     onLoadingChanged: (Boolean, Float) -> Unit,
     onAdBlocked: ((String, String) -> Unit)? = null,
+    onConsoleLog: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     if (url.startsWith("ghost://") || url.isBlank()) {
@@ -114,6 +120,8 @@ fun GhostWebView(
                         }
                     }
 
+                    GhostWebViewHolder.activeWebView = WeakReference(this)
+
                     webChromeClient = object : WebChromeClient() {
                         override fun onPermissionRequest(request: PermissionRequest?) {
                             // Grant web application camera & microphone permissions
@@ -123,6 +131,14 @@ fun GhostWebView(
                         override fun onReceivedTitle(view: WebView?, title: String?) {
                             super.onReceivedTitle(view, title)
                             title?.let { onPageTitleChanged(it) }
+                        }
+
+                        override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                            consoleMessage?.let {
+                                val msg = "[${it.messageLevel()}] ${it.message()}"
+                                onConsoleLog?.invoke(msg)
+                            }
+                            return super.onConsoleMessage(consoleMessage)
                         }
                     }
 
@@ -154,21 +170,7 @@ fun GhostWebView(
                             super.onPageFinished(view, url)
                             onLoadingChanged(false, 1.0f)
                             val titleStr = view?.title ?: "Ghost Browser"
-                            val pageUrl = url ?: ""
                             titleStr.let { onPageTitleChanged(it) }
-
-                            // Trigger Media Notification Service for Background Playback
-                            if (pageUrl.isNotBlank() && !pageUrl.startsWith("ghost://")) {
-                                try {
-                                    GhostMediaService.startService(
-                                        context = context,
-                                        title = titleStr,
-                                        url = pageUrl
-                                    )
-                                } catch (e: Exception) {
-                                    // Handle notification permission or background restrictions gracefully
-                                }
-                            }
 
                             if (siteSettings.adBlockEnabled) {
                                 view?.evaluateJavascript(GhostAdBlocker.adBlockInjectCss, null)
@@ -194,6 +196,7 @@ fun GhostWebView(
                 }
             },
             update = { view ->
+                GhostWebViewHolder.activeWebView = WeakReference(view)
                 val currentLoadedUrl = view.url.orEmpty()
                 if (reloadTrigger != lastReloadTrigger) {
                     lastReloadTrigger = reloadTrigger

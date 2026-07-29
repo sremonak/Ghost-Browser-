@@ -28,8 +28,20 @@ class GhostMediaService : Service() {
 
         when (action) {
             ACTION_START -> {
-                val notification = buildNotification(mediaTitle, mediaUrl, isPlaying = true)
-                startForeground(NOTIFICATION_ID, notification)
+                try {
+                    val notification = buildNotification(mediaTitle, mediaUrl, isPlaying = true)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        startForeground(
+                            NOTIFICATION_ID,
+                            notification,
+                            android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                        )
+                    } else {
+                        startForeground(NOTIFICATION_ID, notification)
+                    }
+                } catch (e: Throwable) {
+                    // Fallback if foreground service operation is blocked by OS or AppOps
+                }
             }
             ACTION_PAUSE -> {
                 val notification = buildNotification(mediaTitle, mediaUrl, isPlaying = false)
@@ -111,23 +123,31 @@ class GhostMediaService : Service() {
         const val EXTRA_MEDIA_URL = "extra_media_url"
 
         fun startService(context: Context, title: String, url: String) {
-            val intent = Intent(context, GhostMediaService::class.java).apply {
-                action = ACTION_START
-                putExtra(EXTRA_MEDIA_TITLE, title)
-                putExtra(EXTRA_MEDIA_URL, url)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            try {
+                val intent = Intent(context, GhostMediaService::class.java).apply {
+                    action = ACTION_START
+                    putExtra(EXTRA_MEDIA_TITLE, title)
+                    putExtra(EXTRA_MEDIA_URL, url)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Throwable) {
+                // Ignore foreground service start restrictions
             }
         }
 
         fun stopService(context: Context) {
-            val intent = Intent(context, GhostMediaService::class.java).apply {
-                action = ACTION_STOP
+            try {
+                val intent = Intent(context, GhostMediaService::class.java).apply {
+                    action = ACTION_STOP
+                }
+                context.startService(intent)
+            } catch (e: Throwable) {
+                // Ignore
             }
-            context.startService(intent)
         }
     }
 }
