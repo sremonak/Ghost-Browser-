@@ -2,50 +2,34 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Professional Polish Light Theme
-val ChromeLightPrimary = Color(0xFF0061A4)
-val ChromeLightOnPrimary = Color(0xFFFFFFFF)
-val ChromeLightPrimaryContainer = Color(0xFFD1E4FF)
-val ChromeLightOnPrimaryContainer = Color(0xFF001D36)
-val ChromeLightBackground = Color(0xFFFDFBFF)
-val ChromeLightSurface = Color(0xFFFDFBFF)
-val ChromeLightSurfaceVariant = Color(0xFFEFF1F8)
-val ChromeLightOnSurfaceVariant = Color(0xFF44474E)
-val ChromeLightBarBackground = Color(0xFFEFF1F8)
-val ChromeLightOnSurface = Color(0xFF191C20)
-val ChromeLightBorder = Color(0xFFC4C6D0)
+// ------------------------------------------------------------------ Light theme
+val NovaLightPrimary = Color(0xFF1A56DB)
+val NovaLightOnPrimary = Color(0xFFFFFFFF)
+val NovaLightPrimaryContainer = Color(0xFFDCE6FF)
+val NovaLightOnPrimaryContainer = Color(0xFF001847)
+val NovaLightBackground = Color(0xFFFDFBFF)
+val NovaLightSurface = Color(0xFFFDFBFF)
+val NovaLightSurfaceVariant = Color(0xFFE3E1EC)
+val NovaLightOnSurfaceVariant = Color(0xFF48454F)
+val NovaLightOnSurface = Color(0xFF1B1B1F)
+val NovaLightBorder = Color(0xFFC9C7D2)
+val NovaLightBarBackground = Color(0xFFEFF0F6)
 
-// Professional Polish Dark Theme
-val ChromeDarkPrimary = Color(0xFFA1C9FF)
-val ChromeDarkOnPrimary = Color(0xFF00325A)
-val ChromeDarkPrimaryContainer = Color(0xFF004878)
-val ChromeDarkOnPrimaryContainer = Color(0xFFD1E4FF)
-val ChromeDarkBackground = Color(0xFF111318)
-val ChromeDarkSurface = Color(0xFF191C20)
-val ChromeDarkSurfaceVariant = Color(0xFF232830)
-val ChromeDarkOnSurfaceVariant = Color(0xFFC4C6D0)
-val ChromeDarkBarBackground = Color(0xFF232830)
-val ChromeDarkOnSurface = Color(0xFFE2E2E9)
-val ChromeDarkBorder = Color(0xFF43474E)
+// ------------------------------------------------------------------- Dark theme
+val NovaDarkPrimary = Color(0xFFA6C5FF)
+val NovaDarkOnPrimary = Color(0xFF0A308C)
+val NovaDarkPrimaryContainer = Color(0xFF00468F)
+val NovaDarkOnPrimaryContainer = Color(0xFFDCE6FF)
+val NovaDarkBackground = Color(0xFF121318)
+val NovaDarkSurface = Color(0xFF191C22)
+val NovaDarkSurfaceVariant = Color(0xFF232830)
+val NovaDarkOnSurfaceVariant = Color(0xFFC9C7D2)
+val NovaDarkOnSurface = Color(0xFFE3E1EC)
+val NovaDarkBorder = Color(0xFF43474E)
+val NovaDarkBarBackground = Color(0xFF232830)
 
-// Incognito Ghost Theme
-val IncognitoBackground = Color(0xFF121318)
-val IncognitoSurface = Color(0xFF1B1C22)
-val IncognitoAccent = Color(0xFFD1E4FF)
-val IncognitoBar = Color(0xFF181920)
-
-// Status & Accents
-val ShieldActiveGreen = Color(0xFF02A169)
-val AdBlockRed = Color(0xFFBA1A1A)
-val WarningYellow = Color(0xFFE08100)
-val PurpleGhostGlow = Color(0xFF0061A4)
-
-// Hacker Matrix Theme
-val HackerGreen = Color(0xFF00FF66)
-val HackerOnGreen = Color(0xFF003B15)
-val HackerGreenContainer = Color(0xFF005221)
-val HackerDarkBg = Color(0xFF060D08)
-val HackerSurface = Color(0xFF0C1710)
-val HackerSurfaceVariant = Color(0xFF122218)
-val HackerBorder = Color(0xFF00CC52)
-
+// ------------------------------------------------------------------- Accents
+val NovaIncognitoAccent = Color(0xFFA6C5FF)
+val NovaSecureGreen = Color(0xFF1E8E3E)
+val NovaWarning = Color(0xFFB26A00)
+val NovaError = Color(0xFFBA1A1A)

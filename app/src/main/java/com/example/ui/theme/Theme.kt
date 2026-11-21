@@ -1,86 +1,61 @@
 package com.example.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-private val DarkColorScheme = darkColorScheme(
-    primary = ChromeDarkPrimary,
-    onPrimary = ChromeDarkOnPrimary,
-    primaryContainer = ChromeDarkPrimaryContainer,
-    onPrimaryContainer = ChromeDarkOnPrimaryContainer,
-    background = ChromeDarkBackground,
-    surface = ChromeDarkSurface,
-    surfaceVariant = ChromeDarkSurfaceVariant,
-    onBackground = ChromeDarkOnSurface,
-    onSurface = ChromeDarkOnSurface,
-    onSurfaceVariant = ChromeDarkOnSurfaceVariant,
-    outline = ChromeDarkBorder,
-    tertiary = PurpleGhostGlow
+private val NovaDarkColorScheme = darkColorScheme(
+    primary = NovaDarkPrimary,
+    onPrimary = NovaDarkOnPrimary,
+    primaryContainer = NovaDarkPrimaryContainer,
+    onPrimaryContainer = NovaDarkOnPrimaryContainer,
+    background = NovaDarkBackground,
+    surface = NovaDarkSurface,
+    surfaceVariant = NovaDarkSurfaceVariant,
+    onBackground = NovaDarkOnSurface,
+    onSurface = NovaDarkOnSurface,
+    onSurfaceVariant = NovaDarkOnSurfaceVariant,
+    outline = NovaDarkBorder,
+    outlineVariant = NovaDarkBorder,
+    tertiary = NovaIncognitoAccent,
+    error = NovaError
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = ChromeLightPrimary,
-    onPrimary = ChromeLightOnPrimary,
-    primaryContainer = ChromeLightPrimaryContainer,
-    onPrimaryContainer = ChromeLightOnPrimaryContainer,
-    background = ChromeLightBackground,
-    surface = ChromeLightSurface,
-    surfaceVariant = ChromeLightSurfaceVariant,
-    onBackground = ChromeLightOnSurface,
-    onSurface = ChromeLightOnSurface,
-    onSurfaceVariant = ChromeLightOnSurfaceVariant,
-    outline = ChromeLightBorder,
-    tertiary = PurpleGhostGlow
+private val NovaLightColorScheme = lightColorScheme(
+    primary = NovaLightPrimary,
+    onPrimary = NovaLightOnPrimary,
+    primaryContainer = NovaLightPrimaryContainer,
+    onPrimaryContainer = NovaLightOnPrimaryContainer,
+    background = NovaLightBackground,
+    surface = NovaLightSurface,
+    surfaceVariant = NovaLightSurfaceVariant,
+    onBackground = NovaLightOnSurface,
+    onSurface = NovaLightOnSurface,
+    onSurfaceVariant = NovaLightOnSurfaceVariant,
+    outline = NovaLightBorder,
+    outlineVariant = NovaLightBorder,
+    tertiary = NovaIncognitoAccent,
+    error = NovaError
 )
 
-private val IncognitoColorScheme = darkColorScheme(
-    primary = IncognitoAccent,
-    onPrimary = IncognitoBackground,
-    primaryContainer = IncognitoBar,
-    onPrimaryContainer = ChromeDarkOnPrimaryContainer,
-    background = IncognitoBackground,
-    surface = IncognitoSurface,
-    surfaceVariant = ChromeDarkSurfaceVariant,
-    onBackground = ChromeDarkOnSurface,
-    onSurface = ChromeDarkOnSurface,
-    onSurfaceVariant = ChromeDarkOnSurfaceVariant,
-    outline = ChromeDarkBorder,
-    tertiary = PurpleGhostGlow
-)
-
-private val HackerColorScheme = darkColorScheme(
-    primary = HackerGreen,
-    onPrimary = HackerOnGreen,
-    primaryContainer = HackerGreenContainer,
-    onPrimaryContainer = HackerGreen,
-    background = HackerDarkBg,
-    surface = HackerSurface,
-    surfaceVariant = HackerSurfaceVariant,
-    onBackground = HackerGreen,
-    onSurface = HackerGreen,
-    onSurfaceVariant = HackerGreen.copy(alpha = 0.8f),
-    outline = HackerBorder,
-    tertiary = ShieldActiveGreen
-)
-
+/**
+ * Nova Browser theme. [darkTheme] forces the palette when the user picked an
+ * explicit light / dark setting; otherwise the system preference is used.
+ */
 @Composable
-fun GhostBrowserTheme(
+fun NovaBrowserTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    isIncognito: Boolean = false,
-    isHackerTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        isHackerTheme -> HackerColorScheme
-        isIncognito -> IncognitoColorScheme
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> NovaDarkColorScheme
+        else -> NovaLightColorScheme
     }
-
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = NovaTypography,
         content = content
     )
 }
