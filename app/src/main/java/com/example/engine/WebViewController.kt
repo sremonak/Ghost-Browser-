@@ -109,19 +109,6 @@ class WebViewController(private val context: Context) {
                     return !isAllowedUrl(url)
                 }
 
-                /**
-                 * SSL certificate errors must cancel the load, never proceed.
-                 * Proceeding would expose users to man-in-the-middle attacks.
-                 */
-                override fun onReceivedSslError(
-                    view: WebView!,
-                    handler: android.webkit.SslErrorHandler!,
-                    error: android.webkit.SslError!
-                ) {
-                    handler.cancel()
-                    onError?.invoke("SSL certificate error")
-                }
-
                 override fun shouldInterceptRequest(
                     view: WebView?,
                     request: WebResourceRequest?
