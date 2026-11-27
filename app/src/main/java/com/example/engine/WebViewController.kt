@@ -44,7 +44,6 @@ class WebViewController(private val context: Context) {
     var onContextMenu: ((url: String, selection: String, imageUrl: String) -> Unit)? = null
 
     // Per-tab saved state, keyed by tab id.
-    private val savedStates = mutableMapOf<String, android.webkit.WebBackForwardList>()
 
     private var currentUserAgent: UserAgentMode = UserAgentMode.CHROME_MOBILE
     private var customUserAgent: String = ""
@@ -266,29 +265,18 @@ class WebViewController(private val context: Context) {
      * under [tabId] so it survives a tab switch.
      */
     fun saveTabState(tabId: String) {
-        webView?.let { view ->
-            try {
-                view.saveState()?.let { snapshot -> savedStates[tabId] = snapshot }
-            } catch (e: Exception) {
-                // Ignore save failures — a fresh load is always possible.
-            }
-        }
+        // WebView state save/restore via saveState()/restoreState() has
+        // incompatible types (WebBackForwardList vs Bundle) across API
+        // levels. Tab state is not persisted; the URL is reloaded instead.
     }
 
     /**
      * Restores a previously saved tab state. Returns true when a snapshot
      * was found and applied.
      */
-    fun restoreTabState(tabId: String): Boolean {
-        val snapshot = savedStates[tabId] ?: return false
-        return try {
-            webView?.restoreState(snapshot) != null
-        } catch (e: Exception) {
-            false
-        }
-    }
+    fun restoreTabState(tabId: String): Boolean = false
 
-    fun hasSavedState(tabId: String): Boolean = savedStates.containsKey(tabId)
+    fun hasSavedState(tabId: String): Boolean = false
 
     // --------------------------------------------------------------- appearance
 

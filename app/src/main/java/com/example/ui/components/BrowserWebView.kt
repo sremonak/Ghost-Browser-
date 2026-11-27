@@ -68,23 +68,13 @@ fun BrowserWebView(
 
                 createdView = view
 
-                // On a tab switch, restore the incoming tab's saved snapshot.
+                // On a tab switch, stop any in-flight load and navigate
+                // to the target URL.
                 if (boundTabId != tabId) {
                     boundTabId = tabId
-                    if (webController.restoreTabState(tabId)) {
-                        return@AndroidView
-                    }
-                }
-
-                // Restore a previously saved tab snapshot when available;
-                // otherwise load the target URL.
-                if (view.url.isNullOrEmpty()) {
-                    if (!webController.restoreTabState(tabId)) {
-                        view.loadUrl(url)
-                    }
-                } else if (view.url != url) {
-                    // Stop any in-flight load of the previous page before
-                    // navigating to the new URL.
+                    if (view.isLoading()) view.stopLoading()
+                    view.loadUrl(url)
+                } else if (view.url.isNullOrEmpty() || view.url != url) {
                     if (view.isLoading()) view.stopLoading()
                     view.loadUrl(url)
                 }

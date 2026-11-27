@@ -388,6 +388,7 @@ private fun BrowserScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BottomNavItem(
     selected: Boolean,
