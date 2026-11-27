@@ -1,34 +1,44 @@
 package com.example
 
-import android.Manifest
-import android.os.Build
 import android.os.Bundle
-import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Article
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.engine.WebViewController
 import com.example.ui.components.*
-import com.example.ui.theme.GhostBrowserTheme
-import com.example.ui.viewmodel.GhostBrowserViewModel
-import com.example.ui.viewmodel.GhostModalType
+import com.example.ui.theme.NovaBrowserTheme
+import com.example.ui.viewmodel.BrowserTabState
+import com.example.ui.viewmodel.ContextMenuState
+import com.example.ui.viewmodel.NovaBrowserViewModel
+import com.example.ui.viewmodel.NovaBrowserUiState
+import com.example.ui.viewmodel.NovaModal
+import com.example.ui.viewmodel.NovaScreen
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: GhostBrowserViewModel by viewModels()
+
+    private val viewModel: NovaBrowserViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,358 +48,395 @@ class MainActivity : ComponentActivity() {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val history by viewModel.historyState.collectAsStateWithLifecycle()
             val bookmarks by viewModel.bookmarksState.collectAsStateWithLifecycle()
-            val passwords by viewModel.passwordsState.collectAsStateWithLifecycle()
-            val plugins by viewModel.pluginsState.collectAsStateWithLifecycle()
+            val downloads by viewModel.downloadsState.collectAsStateWithLifecycle()
+            val readingList by viewModel.readingListState.collectAsStateWithLifecycle()
+            val contextMenu by viewModel.contextMenuState.collectAsStateWithLifecycle()
 
-            val activeTab = viewModel.activeTab
-            val currentUrl = activeTab?.url ?: "ghost://newtab"
-            val isBookmarked = bookmarks.any { it.url == currentUrl }
-            var showExitConfirmation by remember { mutableStateOf(false) }
+            val state = uiState
+            val activeTab = state.tabs.firstOrNull { it.id == state.activeTabId }
 
-            // Camera, Microphone, Storage permissions launcher
-            val permissionLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.RequestMultiplePermissions()
-            ) { /* Handled */ }
-
-            LaunchedEffect(Unit) {
-                val perms = mutableListOf(
-                    Manifest.permission.CAMERA,
-                    Manifest.permission.RECORD_AUDIO
-                )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    perms.add(Manifest.permission.POST_NOTIFICATIONS)
-                }
-                permissionLauncher.launch(perms.toTypedArray())
-            }
-
-            // Custom Back Handler: Web History Back -> Modal Close -> Exit Dialog
-            BackHandler(enabled = true) {
-                when {
-                    uiState.activeModal != GhostModalType.NONE -> {
-                        viewModel.setModal(GhostModalType.NONE)
-                    }
-                    activeTab?.backStack?.isNotEmpty() == true -> {
-                        viewModel.goBackInTab()
-                    }
-                    else -> {
-                        showExitConfirmation = true
-                    }
+            // The WebView controller lives for the lifetime of the browser screen.
+            val webController = remember { WebViewController(this@MainActivity) }
+            LaunchedEffect(state.screen) {
+                if (state.screen == NovaScreen.BROWSER) {
+                    viewModel.attachWebController(webController)
+                } else {
+                    viewModel.detachWebController()
                 }
             }
 
-            // Exit Confirmation Dialog
-            if (showExitConfirmation) {
-                AlertDialog(
-                    onDismissRequest = { showExitConfirmation = false },
-                    title = { Text("Exit Ghost Browser?", fontWeight = FontWeight.Bold) },
-                    text = { Text("Are you sure you want to exit the browser?") },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                showExitConfirmation = false
-                                finish()
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text("Exit")
-                        }
-                    },
-                    dismissButton = {
-                        OutlinedButton(onClick = { showExitConfirmation = false }) {
-                            Text("Cancel")
-                        }
-                    }
-                )
-            }
-
-            // Handle Toast Notifications
-            LaunchedEffect(uiState.toastMessage) {
-                uiState.toastMessage?.let { msg ->
+            // Toast handling
+            LaunchedEffect(state.toastMessage) {
+                state.toastMessage?.let { msg ->
                     Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
                     viewModel.clearToast()
                 }
             }
 
-            Crossfade(
-                targetState = uiState.isHackerTheme,
-                animationSpec = tween(500),
-                label = "ThemeFade"
-            ) { isHacker ->
-                GhostBrowserTheme(darkTheme = if (isHacker) true else uiState.isDarkTheme) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(if (isHacker) Color(0xFF020703) else MaterialTheme.colorScheme.background)
-                    ) {
-                        Scaffold(
-                            topBar = {
-                                ChromeOmnibox(
-                                    currentUrl = currentUrl,
-                                    isBookmarked = isBookmarked,
-                                    tabCount = uiState.tabs.size,
-                                    isIncognito = uiState.isIncognitoMode,
-                                    adsBlockedCount = uiState.adBlockStats.adsBlocked,
-                                    isLoading = uiState.isPageLoading,
-                                    progress = uiState.pageProgress,
-                                    canGoBack = activeTab?.backStack?.isNotEmpty() == true,
-                                    canGoForward = activeTab?.forwardStack?.isNotEmpty() == true,
-                                    onGoBack = { viewModel.goBackInTab() },
-                                    onGoForward = { viewModel.goForwardInTab() },
-                                    onReload = { viewModel.reloadCurrentTab() },
-                                    onNavigate = { url -> viewModel.navigateToUrl(url) },
-                                    onOpenTabSwitcher = { viewModel.setModal(GhostModalType.TAB_SWITCHER) },
-                                    onOpenAdBlockerSettings = { viewModel.setModal(GhostModalType.ADBLOCKER_SETTINGS) },
-                                    onToggleBookmark = {
-                                        if (isBookmarked) {
-                                            bookmarks.firstOrNull { it.url == currentUrl }?.let { b ->
-                                                viewModel.removeBookmark(b.id)
-                                            }
-                                        } else {
-                                            viewModel.addBookmark(activeTab?.title ?: currentUrl, currentUrl)
-                                        }
-                                    },
-                                    onOpenExtensionStore = { viewModel.setModal(GhostModalType.EXTENSION_STORE) },
-                                    onToggleIncognito = {
-                                        viewModel.setIncognitoMode(!uiState.isIncognitoMode)
-                                    },
-                                    onOpenMenuAction = { action ->
-                                        when (action) {
-                                            "NEW_TAB" -> viewModel.openNewTab(isIncognito = false)
-                                            "NEW_INCOGNITO" -> viewModel.openNewTab(isIncognito = true)
-                                            "INSPECT_PAGE" -> viewModel.prepareInspectPage(currentUrl, activeTab?.title ?: currentUrl)
-                                            "TOGGLE_HACKER_THEME" -> viewModel.toggleHackerTheme()
-                                            "HISTORY_BOOKMARKS" -> viewModel.setModal(GhostModalType.HISTORY_BOOKMARKS)
-                                            "PASSWORD_VAULT" -> viewModel.setModal(GhostModalType.PASSWORD_VAULT)
-                                            "GHOST_SYNC" -> viewModel.setModal(GhostModalType.GHOST_SYNC)
-                                            "KEYBOARD_SHORTCUTS" -> viewModel.setModal(GhostModalType.KEYBOARD_SHORTCUTS)
-                                            "VPN_PROXY" -> viewModel.setModal(GhostModalType.VPN_PROXY)
-                                            "SETTINGS" -> viewModel.setModal(GhostModalType.SETTINGS)
-                                            "ABOUT_PAGE" -> viewModel.setModal(GhostModalType.ABOUT_PAGE)
-                                            "NUKE_DATA" -> viewModel.nukeAllData()
-                                        }
-                                    }
-                                )
-                            }
-                        ) { innerPadding ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(innerPadding)
-                            ) {
-                                // Main Content View Area
-                                if (currentUrl == "ghost://newtab" || currentUrl.isBlank()) {
-                                    GhostDashboard(
-                                        isIncognito = uiState.isIncognitoMode,
-                                        searchEngine = uiState.searchEngine,
-                                        adBlockStats = uiState.adBlockStats,
-                                        memoryStatus = uiState.memoryStatus,
-                                        isHackerTheme = uiState.isHackerTheme,
-                                        onNavigate = { url -> viewModel.navigateToUrl(url) },
-                                        onSelectSearchEngine = { engine -> viewModel.setSearchEngine(engine) },
-                                        onOptimizeMemory = { viewModel.optimizeMemory() },
-                                        onOpenAdBlocker = { viewModel.setModal(GhostModalType.ADBLOCKER_SETTINGS) },
-                                        onToggleHackerTheme = { viewModel.toggleHackerTheme() }
-                                    )
-                                } else {
-                                    val (vpnHost, vpnPort) = when {
-                                        uiState.selectedVpnNode.contains("Frankfurt") -> "104.28.16.1" to "8080"
-                                        uiState.selectedVpnNode.contains("Tokyo") -> "103.102.160.1" to "8080"
-                                        uiState.selectedVpnNode.contains("Singapore") -> "128.199.200.1" to "8080"
-                                        uiState.selectedVpnNode.contains("London") -> "185.220.101.5" to "8080"
-                                        else -> uiState.customProxyHost to uiState.customProxyPort
-                                    }
-                                    GhostWebView(
-                                        url = currentUrl,
-                                        userAgentMode = uiState.userAgentMode,
-                                        isIncognito = uiState.isIncognitoMode,
-                                        siteSettings = uiState.activeSiteSecurity,
-                                        reloadTrigger = uiState.reloadTrigger,
-                                        isVpnEnabled = uiState.isVpnEnabled,
-                                        vpnProxyHost = vpnHost,
-                                        vpnProxyPort = vpnPort,
-                                        onPageTitleChanged = { title ->
-                                            viewModel.updateActiveTabTitle(title)
-                                        },
-                                        onLoadingChanged = { isLoading, progress ->
-                                            viewModel.setPageLoading(isLoading, progress)
-                                        },
-                                        onAdBlocked = { blockedUrl, category ->
-                                            viewModel.recordAdOrTrackerBlocked(blockedUrl, category)
-                                        },
-                                        onConsoleLog = { msg ->
-                                            // Real-time console log capturing from WebView JS engine
-                                        }
-                                    )
-                                }
-
-                                // Active Modal Dialog Overlays
-                                when (uiState.activeModal) {
-                                    GhostModalType.TAB_SWITCHER -> {
-                                        ChromeTabSwitcher(
-                                            tabs = uiState.tabs,
-                                            activeTabId = uiState.activeTabId,
-                                            tabGroups = uiState.tabGroups,
-                                            isIncognitoMode = uiState.isIncognitoMode,
-                                            activeGroupFilterId = uiState.activeTabGroupFilterId,
-                                            onSelectTab = { id -> viewModel.selectTab(id) },
-                                            onCloseTab = { id -> viewModel.closeTab(id) },
-                                            onNewTab = { incognito -> viewModel.openNewTab(isIncognito = incognito) },
-                                            onCreateGroup = { name, color -> viewModel.createTabGroup(name, color) },
-                                            onSetGroupFilter = { gId -> viewModel.setTabGroupFilter(gId) },
-                                            onToggleIncognito = { incognito -> viewModel.setIncognitoMode(incognito) },
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.ADBLOCKER_SETTINGS -> {
-                                        AdBlockerBottomSheet(
-                                            stats = uiState.adBlockStats,
-                                            siteSettings = uiState.activeSiteSecurity,
-                                            recentBlockedRequests = uiState.recentBlockedRequests,
-                                            onUpdateSiteSettings = { settings -> viewModel.updateSiteSecuritySettings(settings) },
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.EXTENSION_STORE -> {
-                                        ExtensionStoreModal(
-                                            plugins = plugins,
-                                            onTogglePlugin = { id, enabled -> viewModel.togglePluginEnabled(id, enabled) },
-                                            onInstallCustomPlugin = { name, desc, cat, icon -> viewModel.installCustomPlugin(name, desc, cat, icon) },
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.INSPECT_ELEMENT -> {
-                                        InspectElementModal(
-                                            pageSource = uiState.inspectPageSource,
-                                            consoleLogs = uiState.inspectConsoleLogs,
-                                            httpHeaders = uiState.inspectHttpHeaders,
-                                            isHackerTheme = uiState.isHackerTheme,
-                                            onExecuteJs = { cmd -> viewModel.executeInspectJsCommand(cmd) },
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.PASSWORD_VAULT -> {
-                                        PasswordVaultModal(
-                                            passwords = passwords,
-                                            onSavePassword = { d, u, p -> viewModel.savePassword(d, u, p) },
-                                            onDeletePassword = { id -> viewModel.deletePassword(id) },
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.GHOST_SYNC -> {
-                                        GhostSyncModal(
-                                            pairingInfo = uiState.syncPairingInfo,
-                                            onExportBackup = {
-                                                viewModel.showToast("Encrypted JSON Backup downloaded!")
-                                            },
-                                            onImportBackup = {
-                                                viewModel.showToast("Encrypted Backup verified and restored!")
-                                            },
-                                            onNukeData = { viewModel.nukeAllData() },
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.HISTORY_BOOKMARKS -> {
-                                        HistoryBookmarksModal(
-                                            history = history,
-                                            bookmarks = bookmarks,
-                                            onSelectUrl = { url -> viewModel.navigateToUrl(url) },
-                                            onDeleteHistoryItem = { id -> viewModel.deleteHistoryById(id) },
-                                            onClearHistory = { viewModel.clearHistory() },
-                                            onDeleteBookmark = { id -> viewModel.removeBookmark(id) },
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.KEYBOARD_SHORTCUTS -> {
-                                        KeyboardShortcutsModal(
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.SETTINGS -> {
-                                        GhostSettingsModal(
-                                            isDarkTheme = uiState.isDarkTheme,
-                                            userAgentMode = uiState.userAgentMode,
-                                            memoryLevel = uiState.memoryStatus.optimizationLevel,
-                                            searchEngine = uiState.searchEngine,
-                                            isHackerTheme = uiState.isHackerTheme,
-                                            onToggleTheme = { viewModel.toggleTheme() },
-                                            onToggleHackerTheme = { viewModel.toggleHackerTheme() },
-                                            onSelectUserAgentMode = { mode -> viewModel.setUserAgentMode(mode) },
-                                            onSelectMemoryLevel = { lvl -> viewModel.setMemoryOptimizationLevel(lvl) },
-                                            onSelectSearchEngine = { eng -> viewModel.setSearchEngine(eng) },
-                                            onOpenVpnModal = { viewModel.setModal(GhostModalType.VPN_PROXY) },
-                                            onOpenAboutModal = { viewModel.setModal(GhostModalType.ABOUT_PAGE) },
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.VPN_PROXY -> {
-                                        GhostVpnModal(
-                                            isVpnEnabled = uiState.isVpnEnabled,
-                                            selectedNode = uiState.selectedVpnNode,
-                                            proxyType = uiState.proxyType,
-                                            dohProvider = uiState.dohProvider,
-                                            customProxyHost = uiState.customProxyHost,
-                                            customProxyPort = uiState.customProxyPort,
-                                            isHackerTheme = uiState.isHackerTheme,
-                                            onToggleVpn = { enabled -> viewModel.toggleVpn(enabled) },
-                                            onSelectNode = { node -> viewModel.setVpnNode(node) },
-                                            onSelectProxyType = { type -> viewModel.setProxyType(type) },
-                                            onSelectDohProvider = { doh -> viewModel.setDohProvider(doh) },
-                                            onUpdateCustomProxy = { h, p -> viewModel.setCustomProxy(h, p) },
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.ABOUT_PAGE -> {
-                                        GhostAboutModal(
-                                            isHackerTheme = uiState.isHackerTheme,
-                                            onDismiss = { viewModel.setModal(GhostModalType.NONE) }
-                                        )
-                                    }
-                                    GhostModalType.NONE -> {}
-                                }
-                            }
-                        }
-                    }
+            NovaBrowserTheme(darkTheme = state.isDarkTheme) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    NavHost(
+                        current = state.screen,
+                        onNavigate = viewModel::showScreen,
+                        state = state,
+                        history = history,
+                        bookmarks = bookmarks,
+                        downloads = downloads,
+                        readingList = readingList,
+                        contextMenu = contextMenu,
+                        webController = webController,
+                        viewModel = viewModel,
+                        activeTab = activeTab
+                    )
                 }
             }
         }
     }
+}
 
-    // Hardware Keyboard Shortcuts Handler
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (event != null && event.isCtrlPressed) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_T -> {
-                    viewModel.openNewTab()
-                    return true
-                }
-                KeyEvent.KEYCODE_W -> {
-                    viewModel.activeTab?.id?.let { viewModel.closeTab(it) }
-                    return true
-                }
-                KeyEvent.KEYCODE_N -> {
-                    if (event.isShiftPressed) {
-                        viewModel.openNewTab(isIncognito = true)
-                        return true
-                    }
-                }
-                KeyEvent.KEYCODE_H -> {
-                    viewModel.setModal(GhostModalType.HISTORY_BOOKMARKS)
-                    return true
-                }
-                KeyEvent.KEYCODE_B -> {
-                    viewModel.activeTab?.let {
-                        viewModel.addBookmark(it.title, it.url)
-                    }
-                    return true
-                }
-                KeyEvent.KEYCODE_M -> {
-                    if (event.isShiftPressed) {
-                        viewModel.optimizeMemory()
-                        return true
-                    }
-                }
+@Composable
+private fun NavHost(
+    current: NovaScreen,
+    onNavigate: (NovaScreen) -> Unit,
+    state: NovaBrowserUiState,
+    history: List<com.example.data.HistoryEntity>,
+    bookmarks: List<com.example.data.BookmarkEntity>,
+    downloads: List<com.example.data.DownloadEntity>,
+    readingList: List<com.example.data.ReadingListEntity>,
+    contextMenu: ContextMenuState,
+    webController: WebViewController,
+    viewModel: NovaBrowserViewModel,
+    activeTab: com.example.ui.viewmodel.BrowserTabState?
+) {
+    when (current) {
+        NovaScreen.BROWSER -> {
+            BrowserScreen(
+                state = state,
+                activeTab = activeTab,
+                history = history,
+                bookmarks = bookmarks,
+                readingList = readingList,
+                contextMenu = contextMenu,
+                webController = webController,
+                viewModel = viewModel,
+                onNavigate = onNavigate
+            )
+        }
+        NovaScreen.HISTORY -> {
+            HistoryScreen(
+                history = history,
+                onOpen = { url -> viewModel.loadUrl(url) },
+                onDelete = { id -> viewModel.deleteHistoryItem(id) },
+                onClearAll = viewModel::clearHistory,
+                onBack = { onNavigate(NovaScreen.BROWSER) }
+            )
+        }
+        NovaScreen.BOOKMARKS -> {
+            BookmarksScreen(
+                bookmarks = bookmarks,
+                onOpen = { url -> viewModel.loadUrl(url) },
+                onRemove = { id -> viewModel.removeBookmark(id) },
+                onBack = { onNavigate(NovaScreen.BROWSER) }
+            )
+        }
+        NovaScreen.DOWNLOADS -> {
+            DownloadsScreen(
+                downloads = downloads,
+                onOpen = { url -> viewModel.loadUrl(url) },
+                onDelete = { id -> viewModel.removeDownload(id) },
+                onClearAll = viewModel::clearDownloads,
+                onBack = { onNavigate(NovaScreen.BROWSER) }
+            )
+        }
+        NovaScreen.READING_LIST -> {
+            ReadingListScreen(
+                items = readingList,
+                onOpen = { url -> viewModel.loadUrl(url) },
+                onRemove = { id -> viewModel.removeReadingList(id) },
+                onBack = { onNavigate(NovaScreen.BROWSER) }
+            )
+        }
+        NovaScreen.SETTINGS -> {
+            SettingsScreen(
+                settings = state.settings,
+                versionName = "1.0",
+                viewModel = viewModel,
+                onBack = { onNavigate(NovaScreen.BROWSER) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun BrowserScreen(
+    state: NovaBrowserUiState,
+    activeTab: com.example.ui.viewmodel.BrowserTabState?,
+    history: List<com.example.data.HistoryEntity>,
+    bookmarks: List<com.example.data.BookmarkEntity>,
+    readingList: List<com.example.data.ReadingListEntity>,
+    contextMenu: ContextMenuState,
+    webController: WebViewController,
+    viewModel: NovaBrowserViewModel,
+    onNavigate: (NovaScreen) -> Unit
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    var showFindBar by remember { mutableStateOf(false) }
+
+    val currentUrl = activeTab?.url ?: state.settings.homepage
+    val isHome = currentUrl.startsWith("nova://home") || currentUrl.isBlank()
+    val isBookmarked = bookmarks.any { it.url == currentUrl && !currentUrl.startsWith("nova://") }
+    val isInReadingList = readingList.any { it.url == currentUrl }
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar(
+                tonalElevation = 0.dp
+            ) {
+                BottomNavItem(
+                    selected = state.screen == NovaScreen.BROWSER,
+                    icon = Icons.Filled.Public,
+                    outlinedIcon = Icons.Outlined.Public,
+                    label = "Browser",
+                    onClick = { onNavigate(NovaScreen.BROWSER) }
+                )
+                BottomNavItem(
+                    selected = state.screen == NovaScreen.HISTORY,
+                    icon = Icons.Filled.History,
+                    outlinedIcon = Icons.Outlined.History,
+                    label = "History",
+                    onClick = { onNavigate(NovaScreen.HISTORY) }
+                )
+                BottomNavItem(
+                    selected = state.screen == NovaScreen.BOOKMARKS,
+                    icon = Icons.Filled.Bookmark,
+                    outlinedIcon = Icons.Outlined.BookmarkBorder,
+                    label = "Bookmarks",
+                    onClick = { onNavigate(NovaScreen.BOOKMARKS) }
+                )
+                BottomNavItem(
+                    selected = state.screen == NovaScreen.READING_LIST,
+                    icon = Icons.Filled.Article,
+                    outlinedIcon = Icons.Outlined.Article,
+                    label = "Reading",
+                    onClick = { onNavigate(NovaScreen.READING_LIST) }
+                )
+                BottomNavItem(
+                    selected = state.screen == NovaScreen.DOWNLOADS,
+                    icon = Icons.Filled.Download,
+                    outlinedIcon = Icons.Outlined.Download,
+                    label = "Downloads",
+                    onClick = { onNavigate(NovaScreen.DOWNLOADS) }
+                )
+                BottomNavItem(
+                    selected = state.screen == NovaScreen.SETTINGS,
+                    icon = Icons.Filled.Settings,
+                    outlinedIcon = Icons.Outlined.Settings,
+                    label = "Settings",
+                    onClick = { onNavigate(NovaScreen.SETTINGS) }
+                )
             }
         }
-        return super.onKeyDown(keyCode, event)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            TabStrip(
+                tabs = state.tabs,
+                activeTabId = state.activeTabId,
+                onSelectTab = viewModel::selectTab,
+                onCloseTab = viewModel::closeTab,
+                onNewTab = { viewModel.openNewTab(isIncognito = false) }
+            )
+
+            BrowserToolbar(
+                tab = activeTab ?: state.settings.homepage.let {
+                    com.example.ui.viewmodel.BrowserTabState(url = it)
+                },
+                searchEngine = state.searchEngine,
+                canGoBack = state.canGoBack,
+                canGoForward = state.canGoForward,
+                isLoading = activeTab?.isLoading ?: false,
+                progress = activeTab?.progress ?: 0f,
+                isBookmarked = isBookmarked,
+                isIncognito = activeTab?.isIncognito == true,
+                onNavigate = viewModel::navigateTo,
+                onGoBack = viewModel::goBack,
+                onGoForward = viewModel::goForward,
+                onReload = viewModel::reload,
+                onStop = viewModel::stopLoading,
+                onOpenTabs = { viewModel.setModal(NovaModal.TAB_SWITCHER) },
+                onToggleBookmark = {
+                    val title = activeTab?.title ?: currentUrl
+                    viewModel.toggleBookmark(title, currentUrl)
+                },
+                onOpenMenu = { menuExpanded = true }
+            )
+
+            // Menu dropdown anchored to the toolbar
+            BrowserMenu(
+                expanded = menuExpanded,
+                onDismiss = { menuExpanded = false },
+                onNewTab = { viewModel.openNewTab(isIncognito = false) },
+                onNewIncognitoTab = { viewModel.openNewTab(isIncognito = true) },
+                onHistory = { onNavigate(NovaScreen.HISTORY) },
+                onBookmarks = { onNavigate(NovaScreen.BOOKMARKS) },
+                onDownloads = { onNavigate(NovaScreen.DOWNLOADS) },
+                onSettings = { onNavigate(NovaScreen.SETTINGS) },
+                onSiteInfo = { viewModel.setModal(NovaModal.SITE_INFO) }
+            )
+
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                when {
+                    isHome -> {
+                        HomeScreen(
+                            searchEngine = state.searchEngine,
+                            recentSites = history.take(12).map {
+                                RecentSite(title = it.title, url = it.url, domain = it.domain)
+                            },
+                            onNavigate = viewModel::navigateTo
+                        )
+                    }
+                    activeTab?.errorMessage != null -> {
+                        ErrorScreen(
+                            url = currentUrl,
+                            message = activeTab.errorMessage,
+                            onRetry = viewModel::reload,
+                            onGoHome = viewModel::goHome
+                        )
+                    }
+                    else -> {
+                        BrowserWebView(
+                            webController = webController,
+                            tabId = state.activeTabId,
+                            url = currentUrl,
+                            onPageTitleChanged = viewModel::onPageTitleChanged,
+                            onLoadingChanged = viewModel::onLoadingChanged,
+                            onUrlChanged = viewModel::onUrlChanged,
+                            onAdBlocked = viewModel::onAdBlocked,
+                            onDownload = viewModel::onDownload,
+                            onError = viewModel::onError,
+                            onNavigationStateChanged = viewModel::onNavigationStateChanged,
+                            onFindResult = viewModel::onFindResult,
+                            onContextMenu = viewModel::showContextMenu
+                        )
+                    }
+                }
+
+                // Find in page bar
+                if (showFindBar) {
+                    FindInPageBar(
+                        query = state.findQuery,
+                        resultCount = state.findCount,
+                        onQueryChange = viewModel::updateFindQuery,
+                        onDismiss = {
+                            showFindBar = false
+                            viewModel.clearFindQuery()
+                        }
+                    )
+                }
+            }
+
+            // Modals
+            when (state.modal) {
+                NovaModal.TAB_SWITCHER -> {
+                    TabSwitcher(
+                        tabs = state.tabs,
+                        activeTabId = state.activeTabId,
+                        onSelect = { id -> viewModel.selectTab(id) },
+                        onClose = { id -> viewModel.closeTab(id) },
+                        onNewTab = { viewModel.openNewTab(isIncognito = false) },
+                        onNewIncognito = { viewModel.openNewTab(isIncognito = true) },
+                        onDismiss = { viewModel.setModal(NovaModal.NONE) }
+                    )
+                }
+                NovaModal.SITE_INFO -> {
+                    activeTab?.let { tab ->
+                        SiteInfoSheet(
+                            url = tab.url,
+                            isDesktop = tab.isDesktop,
+                            isReader = tab.isReader,
+                            isIncognito = tab.isIncognito,
+                            onDismiss = { viewModel.setModal(NovaModal.NONE) },
+                            onToggleDesktop = viewModel::toggleDesktopMode,
+                            onToggleReader = viewModel::toggleReaderMode,
+                            onFindInPage = {
+                                viewModel.setModal(NovaModal.NONE)
+                                showFindBar = true
+                            },
+                            onClearSiteData = {
+                                viewModel.clearSiteData(com.example.engine.SearchEngines.displayDomain(tab.url))
+                            }
+                        )
+                    }
+                }
+                NovaModal.MENU -> {
+                    if (contextMenu.isVisible) {
+                        ContextMenuSheet(
+                            state = contextMenu,
+                            isBookmarked = isBookmarked,
+                            isInReadingList = isInReadingList,
+                            viewModel = viewModel,
+                            onDismiss = { viewModel.dismissContextMenu() }
+                        )
+                    }
+                }
+                NovaModal.NONE -> { /* handled by toolbar */ }
+            }
+        }
+    }
+
+    // Global back handling: close modal -> close find bar -> WebView back -> leave.
+    BackHandler(enabled = state.screen == NovaScreen.BROWSER) {
+        when {
+            state.modal != NovaModal.NONE -> viewModel.setModal(NovaModal.NONE)
+            showFindBar -> { showFindBar = false; viewModel.clearFindQuery() }
+            state.canGoBack -> viewModel.goBack()
+            else -> onNavigate(NovaScreen.BROWSER)
+        }
+    }
+}
+
+@Composable
+private fun BottomNavItem(
+    selected: Boolean,
+    icon: ImageVector,
+    outlinedIcon: ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .height(52.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(0.dp),
+        colors = if (selected) {
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        } else {
+            ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    ) {
+        Icon(
+            imageVector = if (selected) icon else outlinedIcon,
+            contentDescription = label,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1
+        )
     }
 }

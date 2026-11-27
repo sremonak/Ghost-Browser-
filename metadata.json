@@ -1,6 +1,6 @@
 {
-  "name": "Ghost Browser",
-  "description": "Ultra-fast, privacy-first lightweight browser with Chrome styling, ad blocker, ghost mode, extension support, tab grouping, script controls, and low RAM optimization.",
+  "name": "Nova Browser",
+  "description": "An advanced, professional Android browser with tab groups, incognito mode, built-in ad & tracker blocking, history/bookmarks/downloads management, reader and desktop modes, find-in-page, data saver and a clean Material 3 interface.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

@@ -1,9 +1,12 @@
 package com.example.engine
 
+/**
+ * The set of user-agent profiles the browser can impersonate.
+ */
 enum class UserAgentMode(val displayName: String, val userAgentString: String) {
     CHROME_MOBILE(
         "Chrome Mobile (Default)",
-        "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36 GhostBrowser/1.0"
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36 NovaBrowser/1.0"
     ),
     CHROME_DESKTOP(
         "Chrome Desktop (Windows)",
@@ -16,19 +19,13 @@ enum class UserAgentMode(val displayName: String, val userAgentString: String) {
     SAFARI_MAC(
         "Safari (macOS)",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15"
-    ),
-    TOR_BROWSER(
-        "Tor Browser (Privacy Mask)",
-        "Mozilla/5.0 (Windows NT 10.0; rv:115.0) Gecko/20100101 Firefox/115.0"
-    ),
-    CUSTOM(
-        "Custom Mask",
-        "GhostBrowser/1.0 PrivacyShield/2.0 (Mobile; UltraFast Engine)"
     );
 
+    val isDesktop: Boolean
+        get() = this == CHROME_DESKTOP || this == FIREFOX_DESKTOP || this == SAFARI_MAC
+
     companion object {
-        fun fromName(name: String): UserAgentMode {
-            return entries.find { it.name == name } ?: CHROME_MOBILE
-        }
+        fun fromName(name: String): UserAgentMode =
+            entries.find { it.name == name } ?: CHROME_MOBILE
     }
 }

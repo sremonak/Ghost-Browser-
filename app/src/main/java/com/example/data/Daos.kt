@@ -5,23 +5,32 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface HistoryDao {
-    @Query("SELECT * FROM browsing_history ORDER BY timestamp DESC")
-    fun getAllHistory(): Flow<List<BrowsingHistoryEntity>>
+    @Query("SELECT * FROM history ORDER BY visitedAt DESC")
+    fun getAllHistory(): Flow<List<HistoryEntity>>
+
+    @Query("SELECT * FROM history WHERE url = :url ORDER BY visitedAt DESC LIMIT 1")
+    suspend fun findByUrl(url: String): HistoryEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertHistory(history: BrowsingHistoryEntity)
+    suspend fun insertHistory(history: HistoryEntity)
 
-    @Query("DELETE FROM browsing_history WHERE id = :id")
+    @Query("DELETE FROM history WHERE id = :id")
     suspend fun deleteHistoryById(id: Long)
 
-    @Query("DELETE FROM browsing_history")
+    @Query("DELETE FROM history")
     suspend fun clearAllHistory()
 }
 
 @Dao
 interface BookmarkDao {
-    @Query("SELECT * FROM bookmarks ORDER BY timestamp DESC")
+    @Query("SELECT * FROM bookmarks ORDER BY createdAt DESC")
     fun getAllBookmarks(): Flow<List<BookmarkEntity>>
+
+    @Query("SELECT DISTINCT folder FROM bookmarks ORDER BY folder ASC")
+    suspend fun getAllFolders(): List<String>
+
+    @Query("SELECT * FROM bookmarks WHERE url = :url LIMIT 1")
+    suspend fun findByUrl(url: String): BookmarkEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBookmark(bookmark: BookmarkEntity)
@@ -50,16 +59,13 @@ interface TabDao {
     @Query("DELETE FROM tabs WHERE id = :id")
     suspend fun deleteTabById(id: String)
 
-    @Query("DELETE FROM tabs WHERE isIncognito = 1")
-    suspend fun clearIncognitoTabs()
-
     @Query("DELETE FROM tabs")
     suspend fun clearAllTabs()
 }
 
 @Dao
 interface TabGroupDao {
-    @Query("SELECT * FROM tab_groups")
+    @Query("SELECT * FROM tab_groups ORDER BY name ASC")
     fun getAllTabGroups(): Flow<List<TabGroupEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -70,31 +76,37 @@ interface TabGroupDao {
 }
 
 @Dao
-interface PasswordVaultDao {
-    @Query("SELECT * FROM password_vault ORDER BY domain ASC")
-    fun getAllPasswords(): Flow<List<PasswordVaultEntity>>
+interface DownloadDao {
+    @Query("SELECT * FROM downloads ORDER BY createdAt DESC")
+    fun getAllDownloads(): Flow<List<DownloadEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPassword(entry: PasswordVaultEntity)
+    suspend fun insertDownload(download: DownloadEntity)
 
-    @Query("DELETE FROM password_vault WHERE id = :id")
-    suspend fun deletePasswordById(id: Long)
+    @Query("DELETE FROM downloads WHERE id = :id")
+    suspend fun deleteDownloadById(id: Long)
 
-    @Query("DELETE FROM password_vault")
-    suspend fun clearAllPasswords()
+    @Query("DELETE FROM downloads")
+    suspend fun clearAllDownloads()
 }
 
 @Dao
-interface ExtensionPluginDao {
-    @Query("SELECT * FROM extension_plugins")
-    fun getAllPlugins(): Flow<List<ExtensionPluginEntity>>
+interface ReadingListDao {
+    @Query("SELECT * FROM reading_list ORDER BY savedAt DESC")
+    fun getAllReadingList(): Flow<List<ReadingListEntity>>
+
+    @Query("SELECT * FROM reading_list WHERE url = :url LIMIT 1")
+    suspend fun findByUrl(url: String): ReadingListEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPlugin(plugin: ExtensionPluginEntity)
+    suspend fun insertReadingList(item: ReadingListEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPlugins(plugins: List<ExtensionPluginEntity>)
+    @Query("DELETE FROM reading_list WHERE id = :id")
+    suspend fun deleteReadingListById(id: Long)
 
-    @Query("UPDATE extension_plugins SET isEnabled = :isEnabled WHERE id = :id")
-    suspend fun setPluginEnabled(id: String, isEnabled: Boolean)
+    @Query("DELETE FROM reading_list WHERE url = :url")
+    suspend fun deleteReadingListByUrl(url: String)
+
+    @Query("DELETE FROM reading_list")
+    suspend fun clearAllReadingList()
 }

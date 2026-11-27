@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Ghost Browser"
+rootProject.name = "Nova Browser"
 
 include(":app")

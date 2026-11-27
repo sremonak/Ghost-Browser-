@@ -4,23 +4,17 @@
 
     <uses-permission android:name="android.intent.permission.INTERNET" />
     <uses-permission android:name="android.intent.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.intent.permission.CAMERA" />
-    <uses-permission android:name="android.intent.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.intent.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.intent.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
-    <uses-permission android:name="android.intent.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.intent.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.intent.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.intent.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.intent.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.intent.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.intent.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.intent.permission.VIBRATE" />
 
     <attribution
         android:tag="default"
         android:label="@string/app_name" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:hardwareAccelerated="true"
@@ -38,6 +32,17 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.BROWSER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSER" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:scheme="nova" />
             </intent-filter>
         </activity>
     </application>
