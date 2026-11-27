@@ -234,7 +234,7 @@ fun HomeScreen(
                             )
                         }
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowForward,
+                            Icons.Filled.ArrowForward,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )

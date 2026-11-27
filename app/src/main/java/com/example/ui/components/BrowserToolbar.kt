@@ -81,7 +81,7 @@ fun BrowserToolbar(
             }
             IconButton(onClick = onGoForward, enabled = canGoForward) {
                 Icon(
-                    Icons.AutoMirrored.Filled.ArrowForward,
+                    Icons.Filled.ArrowForward,
                     contentDescription = "Forward",
                     tint = if (canGoForward) MaterialTheme.colorScheme.onSurface
                     else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
