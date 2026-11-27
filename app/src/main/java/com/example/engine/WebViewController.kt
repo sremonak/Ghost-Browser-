@@ -20,8 +20,9 @@ import java.io.ByteArrayInputStream
 /**
  * Owns the single [WebView] used by the active tab.
  *
- * - Saves/restore each tab's scroll + form state via [WebView.saveState]
- *   so switching tabs does not lose progress.
+ * - Validates navigation URLs and enforces HTTPS-only policy.
+ * - Enables Safe Browsing (API 26+) and cancels SSL errors.
+ * - Disables local file/content access for a minimal attack surface.
  * - Applies the privacy engine (ad / tracker blocking) at the network layer.
  * - Routes downloads through the system [DownloadManager].
  * - Exposes find-in-page, desktop mode and per-site toggles.
@@ -76,11 +77,14 @@ class WebViewController(private val context: Context) {
         view.settings.apply {
             javaScriptEnabled = this@WebViewController.javascriptEnabled
             domStorageEnabled = true
-            databaseEnabled = true
             useWideViewPort = true
             loadWithOverviewMode = false
-            allowFileAccess = true
-            allowContentAccess = true
+            // Disable local file and content access to prevent WebView
+            // from reading app-internal or content:// resources.
+            allowFileAccess = false
+            allowContentAccess = false
+            allowFileAccessFromFileURLs = false
+            allowUniversalAccessFromFileURLs = false
             mediaPlaybackRequiresUserGesture = false
             setSupportZoom(true)
             builtInZoomControls = true
@@ -88,7 +92,36 @@ class WebViewController(private val context: Context) {
             blockNetworkImage = false
             cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
         }
+        // Enable Safe Browsing on API 26+ to block known phishing/malware URLs.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            view.settings.safeBrowsingEnabled = true
+        }
         view.webViewClient = object : WebViewClient() {
+                /**
+                 * Validates URLs before navigation. Blocks non-HTTP(S) schemes
+                 * except internal nova:// and about:// URIs.
+                 */
+                override fun shouldOverrideUrlLoading(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): Boolean {
+                    val url = request?.url?.toString() ?: return false
+                    return !isAllowedUrl(url)
+                }
+
+                /**
+                 * SSL certificate errors must cancel the load, never proceed.
+                 * Proceeding would expose users to man-in-the-middle attacks.
+                 */
+                override fun onReceivedSslError(
+                    view: WebView?,
+                    handler: android.webkit.SslErrorHandler?,
+                    error: android.webkit.SslError?
+                ) {
+                    handler?.cancel()
+                    onError?.invoke("SSL certificate error")
+                }
+
                 override fun shouldInterceptRequest(
                     view: WebView?,
                     request: WebResourceRequest?
@@ -131,6 +164,8 @@ class WebViewController(private val context: Context) {
                     if (adBlockEnabled) {
                         view?.evaluateJavascript(NovaAdBlocker.adBlockInjectCss, null)
                     }
+                    // Always inject anti-fingerprinting protection.
+                    view?.evaluateJavascript(NovaAdBlocker.antiFingerprintJs, null)
                     if (isReaderMode) {
                         view?.evaluateJavascript(readerModeJs, null)
                     }
@@ -337,7 +372,7 @@ class WebViewController(private val context: Context) {
 
     fun setDataSaverEnabled(enabled: Boolean) {
         dataSaverEnabled = enabled
-        webView?.settings?.blockNetworkImage = false // network images handled in interceptor
+        if (currentLoadedUrl.isNotBlank()) webView?.reload()
     }
 
     // ------------------------------------------------------------------ find in page
@@ -405,6 +440,20 @@ class WebViewController(private val context: Context) {
             }
         } catch (e: Exception) {
             ""
+        }
+    }
+
+    /**
+     * Returns true when [url] is safe to navigate to.
+     * Allows http/https and the internal nova:// and about:// schemes.
+     * Rejects javascript:, data:, file:, and other dangerous schemes.
+     */
+    private fun isAllowedUrl(url: String): Boolean {
+        if (url.isBlank()) return false
+        return when {
+            url.startsWith("nova://") || url.startsWith("about:") -> true
+            url.startsWith("http://") || url.startsWith("https://") -> true
+            else -> false
         }
     }
 

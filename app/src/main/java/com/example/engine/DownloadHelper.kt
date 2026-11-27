@@ -65,6 +65,25 @@ object DownloadHelper {
         }
     }
 
+    /**
+     * Returns the downloaded file size in bytes, or -1 if unknown.
+     */
+    fun sizeOf(context: Context, downloadId: Long): Long {
+        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        return try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                manager.query(DownloadManager.Query().setFilterById(downloadId))?.use { c ->
+                    if (c.moveToFirst()) {
+                        val idx = c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                        if (idx >= 0) c.getLong(idx) else -1L
+                    } else -1L
+                } ?: -1L
+            } else -1L
+        } catch (e: Exception) {
+            -1L
+        }
+    }
+
     fun statusLabel(status: Int): String = when (status) {
         DownloadManager.STATUS_PAUSED -> "Paused"
         DownloadManager.STATUS_PENDING -> "Queued"

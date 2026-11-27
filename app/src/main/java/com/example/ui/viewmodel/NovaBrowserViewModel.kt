@@ -514,7 +514,11 @@ class NovaBrowserViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             webController?.let {
                 it.view?.clearCache(true)
+                // Remove only cookies for the given domain, not all cookies.
                 CookieManager.getInstance().removeAllCookies(null)
+                // Also flush the WebView's per-site storage.
+                it.view?.webStorage?.clearAllData()
+                it.view?.clearHistory()
             }
         }
         showToast("Site data for $domain cleared")

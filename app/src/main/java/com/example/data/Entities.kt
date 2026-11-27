@@ -6,7 +6,10 @@ import androidx.room.PrimaryKey
 /**
  * A single entry in the browsing history.
  */
-@Entity(tableName = "history")
+@Entity(
+    tableName = "history",
+    indices = [Index(value = ["url"], unique = false), Index(value = ["visitedAt"], unique = false)]
+)
 data class HistoryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
@@ -18,7 +21,10 @@ data class HistoryEntity(
 /**
  * A user-saved bookmark, optionally grouped into a folder.
  */
-@Entity(tableName = "bookmarks")
+@Entity(
+    tableName = "bookmarks",
+    indices = [Index(value = ["url"], unique = false)]
+)
 data class BookmarkEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
@@ -55,7 +61,10 @@ data class TabGroupEntity(
 /**
  * A page saved for later reading, stored in the reading list.
  */
-@Entity(tableName = "reading_list")
+@Entity(
+    tableName = "reading_list",
+    indices = [Index(value = ["url"], unique = false)]
+)
 data class ReadingListEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
@@ -67,7 +76,10 @@ data class ReadingListEntity(
 /**
  * A file downloaded through the browser, tracked for the Downloads screen.
  */
-@Entity(tableName = "downloads")
+@Entity(
+    tableName = "downloads",
+    indices = [Index(value = ["downloadId"], unique = true)]
+)
 data class DownloadEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val downloadId: Long,

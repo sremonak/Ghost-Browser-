@@ -54,6 +54,20 @@ object SearchEngines {
     }
 
     /**
+     * Returns true when [url] is a safe navigation target.
+     * Blocks javascript:, data:, file: and other dangerous schemes
+     * while allowing http/https and internal nova:// / about:// URIs.
+     */
+    fun isSafeUrl(url: String): Boolean {
+        if (url.isBlank()) return false
+        return when {
+            url.startsWith("nova://") || url.startsWith("about:") -> true
+            url.startsWith("http://") || url.startsWith("https://") -> true
+            else -> false
+        }
+    }
+
+    /**
      * Extracts a readable domain from a URL for display purposes.
      */
     fun displayDomain(url: String): String {

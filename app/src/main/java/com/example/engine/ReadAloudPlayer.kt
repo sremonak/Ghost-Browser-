@@ -43,9 +43,10 @@ class ReadAloudPlayer(context: Context) {
         chunks.forEachIndexed { index, chunk ->
             val queueMode = if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
             try {
-                engine.speak(chunk, TextToSpeech.QUEUE_ADD, null, "nova-$index")
+                engine.speak(chunk, queueMode, null, "nova-$index")
             } catch (e: Exception) {
                 _isSpeaking.value = false
+                return
             }
         }
         _isSpeaking.value = true

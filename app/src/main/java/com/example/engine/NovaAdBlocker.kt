@@ -45,7 +45,6 @@ object NovaAdBlocker {
         "popcash.net",
         "exoclick.com",
         "adthrive.com",
-        "adthrive.com",
         "3lift.com",
         "openx.net",
         "smartadserver.com",
