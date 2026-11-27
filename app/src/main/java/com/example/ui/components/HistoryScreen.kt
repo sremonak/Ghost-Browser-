@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.data.HistoryEntry
+import com.example.data.HistoryEntity
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -24,7 +24,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    history: List<HistoryEntry>,
+    history: List<HistoryEntity>,
     onOpen: (String) -> Unit,
     onDelete: (String) -> Unit,
     onClearAll: () -> Unit,
@@ -100,7 +100,7 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun HistoryRow(entry: HistoryEntry, onOpen: () -> Unit, onDelete: () -> Unit) {
+private fun HistoryRow(entry: HistoryEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,

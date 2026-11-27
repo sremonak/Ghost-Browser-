@@ -16,12 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.data.Bookmark
+import com.example.data.BookmarkEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookmarksScreen(
-    bookmarks: List<Bookmark>,
+    bookmarks: List<BookmarkEntity>,
     onOpen: (String) -> Unit,
     onRemove: (String) -> Unit,
     onBack: () -> Unit,
@@ -70,7 +70,7 @@ fun BookmarksScreen(
 }
 
 @Composable
-private fun BookmarkRow(bookmark: Bookmark, onOpen: () -> Unit, onRemove: () -> Unit) {
+private fun BookmarkRow(bookmark: BookmarkEntity, onOpen: () -> Unit, onRemove: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,

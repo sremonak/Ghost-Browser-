@@ -16,12 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.data.ReadingListEntry
+import com.example.data.ReadingListEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReadingListScreen(
-    items: List<ReadingListEntry>,
+    items: List<ReadingListEntity>,
     onOpen: (String) -> Unit,
     onRemove: (String) -> Unit,
     onBack: () -> Unit,
@@ -70,7 +70,7 @@ fun ReadingListScreen(
 }
 
 @Composable
-private fun ReadingListRow(entry: ReadingListEntry, onOpen: () -> Unit, onRemove: () -> Unit) {
+private fun ReadingListRow(entry: ReadingListEntity, onOpen: () -> Unit, onRemove: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,

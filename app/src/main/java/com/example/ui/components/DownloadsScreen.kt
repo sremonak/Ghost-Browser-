@@ -14,12 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.data.DownloadItem
+import com.example.data.DownloadEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadsScreen(
-    downloads: List<DownloadItem>,
+    downloads: List<DownloadEntity>,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,7 +66,7 @@ fun DownloadsScreen(
 }
 
 @Composable
-private fun DownloadRow(download: DownloadItem) {
+private fun DownloadRow(download: DownloadEntity) {
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,

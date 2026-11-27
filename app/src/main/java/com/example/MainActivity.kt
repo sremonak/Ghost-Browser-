@@ -348,12 +348,10 @@ private fun BrowserScreen(
                     TabSwitcher(
                         tabs = state.tabs,
                         activeTabId = state.activeTabId,
-                        tabGroups = state.tabGroups,
-                        onSelectTab = viewModel::selectTab,
-                        onCloseTab = viewModel::closeTab,
+                        onSelect = { id -> viewModel.selectTab(id) },
+                        onClose = { id -> viewModel.closeTab(id) },
                         onNewTab = { viewModel.openNewTab(isIncognito = false) },
-                        onNewIncognitoTab = { viewModel.openNewTab(isIncognito = true) },
-                        onCreateGroup = { name -> viewModel.createTabGroup(name, "#1A56DB") },
+                        onNewIncognito = { viewModel.openNewTab(isIncognito = true) },
                         onDismiss = { viewModel.setModal(NovaModal.NONE) }
                     )
                 }
