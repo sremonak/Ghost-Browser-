@@ -23,7 +23,7 @@ import com.example.data.BookmarkEntity
 fun BookmarksScreen(
     bookmarks: List<BookmarkEntity>,
     onOpen: (String) -> Unit,
-    onRemove: (String) -> Unit,
+    onRemove: (Long) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -62,7 +62,7 @@ fun BookmarksScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(bookmarks, key = { it.url }) { bookmark ->
-                    BookmarkRow(bookmark, onOpen = { onOpen(bookmark.url) }, onRemove = { onRemove(bookmark.url) })
+                    BookmarkRow(bookmark, onOpen = { onOpen(bookmark.url) }, onRemove = { onRemove(bookmark.id) })
                 }
             }
         }

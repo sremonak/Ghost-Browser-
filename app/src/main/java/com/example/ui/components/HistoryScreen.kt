@@ -26,7 +26,7 @@ import java.util.Locale
 fun HistoryScreen(
     history: List<HistoryEntity>,
     onOpen: (String) -> Unit,
-    onDelete: (String) -> Unit,
+    onDelete: (Long) -> Unit,
     onClearAll: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -91,7 +91,7 @@ fun HistoryScreen(
                         )
                     }
                     items(entries, key = { it.url }) { entry ->
-                        HistoryRow(entry, onOpen = { onOpen(entry.url) }, onDelete = { onDelete(entry.url) })
+                        HistoryRow(entry, onOpen = { onOpen(entry.url) }, onDelete = { onDelete(entry.id) })
                     }
                 }
             }

@@ -128,8 +128,8 @@ private fun NavHost(
         NovaScreen.HISTORY -> {
             HistoryScreen(
                 history = history,
-                onOpen = { viewModel.loadUrl(it) },
-                onDelete = viewModel::deleteHistoryItem,
+                onOpen = { url -> viewModel.loadUrl(url) },
+                onDelete = { id -> viewModel.deleteHistoryItem(id) },
                 onClearAll = viewModel::clearHistory,
                 onBack = { onNavigate(NovaScreen.BROWSER) }
             )
@@ -137,16 +137,16 @@ private fun NavHost(
         NovaScreen.BOOKMARKS -> {
             BookmarksScreen(
                 bookmarks = bookmarks,
-                onOpen = { viewModel.loadUrl(it) },
-                onDelete = viewModel::removeBookmark,
+                onOpen = { url -> viewModel.loadUrl(url) },
+                onRemove = { id -> viewModel.removeBookmark(id) },
                 onBack = { onNavigate(NovaScreen.BROWSER) }
             )
         }
         NovaScreen.DOWNLOADS -> {
             DownloadsScreen(
                 downloads = downloads,
-                onOpen = { viewModel.loadUrl(it.url) },
-                onDelete = viewModel::removeDownload,
+                onOpen = { url -> viewModel.loadUrl(url) },
+                onDelete = { id -> viewModel.removeDownload(id) },
                 onClearAll = viewModel::clearDownloads,
                 onBack = { onNavigate(NovaScreen.BROWSER) }
             )
@@ -154,9 +154,8 @@ private fun NavHost(
         NovaScreen.READING_LIST -> {
             ReadingListScreen(
                 items = readingList,
-                onOpen = { viewModel.loadUrl(it) },
-                onDelete = viewModel::removeReadingList,
-                onClearAll = viewModel::clearReadingList,
+                onOpen = { url -> viewModel.loadUrl(url) },
+                onRemove = { id -> viewModel.removeReadingList(id) },
                 onBack = { onNavigate(NovaScreen.BROWSER) }
             )
         }

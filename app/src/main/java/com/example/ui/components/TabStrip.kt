@@ -27,6 +27,7 @@ fun TabStrip(
     activeTabId: String,
     onSelectTab: (String) -> Unit,
     onCloseTab: (String) -> Unit,
+    onNewTab: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (tabs.isEmpty()) return
@@ -103,7 +104,7 @@ fun TabStrip(
             contentColor = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier
                 .size(36.dp)
-                .clickable { /* handled by parent if needed */ }
+                .clickable { onNewTab() }
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(

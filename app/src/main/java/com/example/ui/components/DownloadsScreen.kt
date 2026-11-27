@@ -1,11 +1,13 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -20,6 +22,9 @@ import com.example.data.DownloadEntity
 @Composable
 fun DownloadsScreen(
     downloads: List<DownloadEntity>,
+    onOpen: (String) -> Unit,
+    onDelete: (Long) -> Unit,
+    onClearAll: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -45,6 +50,15 @@ fun DownloadsScreen(
                             contentDescription = "Back"
                         )
                     }
+                },
+                actions = {
+                    if (downloads.isNotEmpty()) {
+                        TextButton(onClick = onClearAll) {
+                            Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Clear all")
+                        }
+                    }
                 }
             )
         }
@@ -58,7 +72,11 @@ fun DownloadsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(downloads, key = { it.id }) { download ->
-                    DownloadRow(download)
+                    DownloadRow(
+                        download = download,
+                        onOpen = { onOpen(download.url) },
+                        onDelete = { onDelete(download.id) }
+                    )
                 }
             }
         }
@@ -66,7 +84,7 @@ fun DownloadsScreen(
 }
 
 @Composable
-private fun DownloadRow(download: DownloadEntity) {
+private fun DownloadRow(download: DownloadEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -76,6 +94,7 @@ private fun DownloadRow(download: DownloadEntity) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable(onClick = onOpen)
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -103,9 +122,17 @@ private fun DownloadRow(download: DownloadEntity) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = download.sizeLabel,
+                    text = formatSize(download.sizeBytes),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = "Delete",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -139,5 +166,14 @@ private fun DownloadsEmptyState(modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+private fun formatSize(bytes: Long): String {
+    return when {
+        bytes < 1024 -> "${bytes} B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
+        else -> "${bytes / (1024 * 1024 * 1024)} GB"
     }
 }

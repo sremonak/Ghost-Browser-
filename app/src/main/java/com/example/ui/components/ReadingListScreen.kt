@@ -23,7 +23,7 @@ import com.example.data.ReadingListEntity
 fun ReadingListScreen(
     items: List<ReadingListEntity>,
     onOpen: (String) -> Unit,
-    onRemove: (String) -> Unit,
+    onRemove: (Long) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -62,7 +62,7 @@ fun ReadingListScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(items, key = { it.url }) { entry ->
-                    ReadingListRow(entry, onOpen = { onOpen(entry.url) }, onRemove = { onRemove(entry.url) })
+                    ReadingListRow(entry, onOpen = { onOpen(entry.url) }, onRemove = { onRemove(entry.id) })
                 }
             }
         }
