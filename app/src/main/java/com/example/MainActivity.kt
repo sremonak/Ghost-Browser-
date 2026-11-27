@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -22,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.engine.WebViewController
@@ -410,22 +412,34 @@ private fun BottomNavItem(
     label: String,
     onClick: () -> Unit
 ) {
-    NavigationBarItem(
-        selected = selected,
+    Button(
         onClick = onClick,
-        icon = {
-            Icon(
-                imageVector = if (selected) icon else outlinedIcon,
-                contentDescription = label,
-                modifier = Modifier.size(24.dp)
+        modifier = Modifier
+            .height(52.dp)
+            .weight(1f),
+        shape = RoundedCornerShape(0.dp),
+        colors = if (selected) {
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
             )
-        },
-        label = {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1
+        } else {
+            ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    )
+    ) {
+        Icon(
+            imageVector = if (selected) icon else outlinedIcon,
+            contentDescription = label,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1
+        )
+    }
 }
