@@ -15,7 +15,7 @@ import androidx.room.RoomDatabase
         ReadingListEntity::class
     ],
     version = 1,
-    exportSchema = true
+    exportSchema = false
 )
 abstract class NovaDatabase : RoomDatabase() {
     abstract fun historyDao(): HistoryDao

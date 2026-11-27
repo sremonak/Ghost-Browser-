@@ -66,7 +66,6 @@ android {
   // Room schema export location for migration tracking
   defaultConfig {
     ksp {
-      arg("room.schemaLocation", "$projectDir/schemas")
     }
   }
 }
