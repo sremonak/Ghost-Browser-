@@ -53,6 +53,18 @@ data class TabGroupEntity(
 )
 
 /**
+ * A page saved for later reading, stored in the reading list.
+ */
+@Entity(tableName = "reading_list")
+data class ReadingListEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val url: String,
+    val domain: String,
+    val savedAt: Long = System.currentTimeMillis()
+)
+
+/**
  * A file downloaded through the browser, tracked for the Downloads screen.
  */
 @Entity(tableName = "downloads")

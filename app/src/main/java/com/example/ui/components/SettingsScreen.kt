@@ -88,7 +88,7 @@ fun SettingsScreen(
                                 "https://www.bing.com",
                                 "https://duckduckgo.com"
                             ),
-                            onSelect = { update { it.copy(homepage = it) } }
+                            onSelect = { selected -> update { s -> s.copy(homepage = selected) } }
                         )
                     }
                 )
@@ -99,7 +99,7 @@ fun SettingsScreen(
                         DropdownChoice(
                             value = current.searchEngine,
                             options = SearchEngines.all.map { it.name },
-                            onSelect = { update { it.copy(searchEngine = it) } }
+                            onSelect = { selected -> update { s -> s.copy(searchEngine = selected) } }
                         )
                     }
                 )

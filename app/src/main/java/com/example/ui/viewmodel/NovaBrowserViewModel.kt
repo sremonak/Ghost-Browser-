@@ -8,6 +8,7 @@ import com.example.data.BrowserSettings
 import com.example.data.DownloadEntity
 import com.example.data.NovaPreferences
 import com.example.data.NovaRepository
+import com.example.data.ReadingListEntity
 import com.example.engine.BlockStats
 import com.example.engine.BlockedRequestItem
 import com.example.engine.SearchEngines
@@ -19,7 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
-enum class NovaScreen { BROWSER, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS }
+enum class NovaScreen { BROWSER, HISTORY, BOOKMARKS, DOWNLOADS, READING_LIST, SETTINGS }
 
 enum class NovaModal { NONE, TAB_SWITCHER, MENU, SITE_INFO }
 
@@ -56,6 +57,18 @@ data class NovaBrowserUiState(
 )
 
 /**
+ * Describes the page action menu shown after a long-press. [url] is the
+ * link under the press (or the current page when none), [selection] the
+ * highlighted text and [imageUrl] the pressed image, when applicable.
+ */
+data class ContextMenuState(
+    val url: String = "",
+    val selection: String = "",
+    val imageUrl: String = "",
+    val isVisible: Boolean = false
+)
+
+/**
  * Central state holder for Nova Browser.
  *
  * Holds tabs, navigation intents and user data in memory while persisting
@@ -85,9 +98,13 @@ class NovaBrowserViewModel(application: Application) : AndroidViewModel(applicat
     private val _uiState = MutableStateFlow(NovaBrowserUiState())
     val uiState: StateFlow<NovaBrowserUiState> = _uiState.asStateFlow()
 
+    private val _contextMenu = MutableStateFlow(ContextMenuState())
+    val contextMenuState: StateFlow<ContextMenuState> = _contextMenu.asStateFlow()
+
     val historyState: StateFlow<List<com.example.data.HistoryEntity>>
     val bookmarksState: StateFlow<List<com.example.data.BookmarkEntity>>
     val downloadsState: StateFlow<List<DownloadEntity>>
+    val readingListState: StateFlow<List<ReadingListEntity>>
 
     init {
         val database = com.example.data.NovaDatabase.getInstance(application)
@@ -97,6 +114,7 @@ class NovaBrowserViewModel(application: Application) : AndroidViewModel(applicat
         historyState = repository.allHistory.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         bookmarksState = repository.allBookmarks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         downloadsState = repository.allDownloads.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        readingListState = repository.allReadingList.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
         viewModelScope.launch {
             preferences.settings.collect { settings ->
@@ -477,7 +495,7 @@ class NovaBrowserViewModel(application: Application) : AndroidViewModel(applicat
             repository.clearAllUserData()
             withContext(Dispatchers.Main) {
                 webController?.let {
-                    it.webView?.clearCache(true)
+                    it.view?.clearCache(true)
                     CookieManager.getInstance().removeAllCookies(null)
                 }
                 _uiState.update {
@@ -495,11 +513,121 @@ class NovaBrowserViewModel(application: Application) : AndroidViewModel(applicat
     fun clearSiteData(domain: String) {
         viewModelScope.launch {
             webController?.let {
-                it.webView?.clearCache(true)
+                it.view?.clearCache(true)
                 CookieManager.getInstance().removeAllCookies(null)
             }
         }
         showToast("Site data for $domain cleared")
+    }
+
+    // ------------------------------------------------------------ context menu
+
+    fun showContextMenu(url: String, selection: String, imageUrl: String) {
+        _contextMenu.update {
+            ContextMenuState(url = url, selection = selection, imageUrl = imageUrl, isVisible = true)
+        }
+        setModal(NovaModal.MENU)
+    }
+
+    fun dismissContextMenu() {
+        _contextMenu.update { it.copy(isVisible = false) }
+        setModal(NovaModal.NONE)
+    }
+
+    fun copyToClipboard(text: String) {
+        val clip = getApplication<Application>().getSystemService(android.content.ClipboardManager::class.java)
+        clip?.setPrimaryClip(android.content.ClipData.newPlainText("Nova Browser", text))
+    }
+
+    fun openInNewTab(url: String) {
+        openNewTab(isIncognito = false, url = url)
+        dismissContextMenu()
+    }
+
+    fun shareText(text: String) {
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(android.content.Intent.EXTRA_TEXT, text)
+        }
+        getApplication<Application>().startActivity(
+            android.content.Intent.createChooser(intent, "Share")
+        )
+        dismissContextMenu()
+    }
+
+    fun downloadLink(url: String) {
+        viewModelScope.launch {
+            val info = com.example.engine.DownloadHelper.enqueue(
+                getApplication(),
+                url,
+                webController?.view?.settings?.userAgentString ?: "",
+                null,
+                null
+            )
+            repository.addDownload(
+                DownloadEntity(
+                    downloadId = info.downloadId,
+                    fileName = info.fileName,
+                    url = url,
+                    mimeType = info.mimeType,
+                    sizeBytes = info.sizeBytes,
+                    status = android.app.DownloadManager.STATUS_RUNNING
+                )
+            )
+        }
+        dismissContextMenu()
+    }
+
+    fun saveImage(url: String) {
+        downloadLink(url)
+    }
+
+    fun toggleReadingList(title: String, url: String): Boolean {
+        val exists = readingListState.value.any { it.url == url }
+        viewModelScope.launch {
+            if (exists) repository.removeReadingListByUrl(url)
+            else repository.addReadingList(title, url)
+        }
+        return !exists
+    }
+
+    fun isInReadingList(url: String): Boolean =
+        readingListState.value.any { it.url == url }
+
+    fun removeReadingList(id: Long) {
+        viewModelScope.launch { repository.removeReadingList(id) }
+    }
+
+    fun clearReadingList() {
+        viewModelScope.launch { repository.clearReadingList() }
+    }
+
+    fun addToHomeScreen(title: String, url: String) {
+        val context = getApplication<Application>()
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
+            showToast("Home screen shortcuts require Android 8 or newer")
+            return
+        }
+        val shortcutManager = context.getSystemService(android.content.pm.ShortcutManager::class.java)
+        if (shortcutManager == null) {
+            showToast("Home screen shortcuts are not available")
+            return
+        }
+        val shortcut = android.content.pm.ShortcutInfo.Builder(context, "nova_$url")
+            .setShortLabel(title.ifBlank { url })
+            .setLongLabel(url)
+            .setIcon(android.graphics.drawable.Icon.createWithResource(context, android.R.drawable.ic_menu_view))
+            .setIntent(
+                android.content.Intent(context, com.example.MainActivity::class.java).apply {
+                    action = android.content.Intent.ACTION_VIEW
+                    data = android.net.Uri.parse(url)
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            )
+            .build()
+        shortcutManager.addDynamicShortcuts(listOf(shortcut))
+        showToast("Added to home screen")
+        dismissContextMenu()
     }
 
     private fun showToast(message: String) {

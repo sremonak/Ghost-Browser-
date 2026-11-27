@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 /**
  * Dropdown menu shown from the toolbar's overflow button.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowserMenu(
     expanded: Boolean,

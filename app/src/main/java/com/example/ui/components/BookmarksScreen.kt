@@ -65,7 +65,7 @@ fun BookmarksScreen(
                 placeholder = { Text("Search bookmarks") },
                 leadingIcon = { Icon(Icons.Filled.BookmarkBorder, contentDescription = null) },
                 shapes = listOf(RoundedCornerShape(24.dp)),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
+                colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                 )

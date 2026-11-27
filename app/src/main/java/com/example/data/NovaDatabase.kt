@@ -11,7 +11,8 @@ import androidx.room.RoomDatabase
         BookmarkEntity::class,
         TabEntity::class,
         TabGroupEntity::class,
-        DownloadEntity::class
+        DownloadEntity::class,
+        ReadingListEntity::class
     ],
     version = 1,
     exportSchema = false
@@ -22,6 +23,7 @@ abstract class NovaDatabase : RoomDatabase() {
     abstract fun tabDao(): TabDao
     abstract fun tabGroupDao(): TabGroupDao
     abstract fun downloadDao(): DownloadDao
+    abstract fun readingListDao(): ReadingListDao
 
     companion object {
         @Volatile

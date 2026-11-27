@@ -22,6 +22,7 @@ import com.example.engine.WebViewController
 import com.example.ui.components.*
 import com.example.ui.theme.NovaBrowserTheme
 import com.example.ui.viewmodel.BrowserTabState
+import com.example.ui.viewmodel.ContextMenuState
 import com.example.ui.viewmodel.NovaBrowserViewModel
 import com.example.ui.viewmodel.NovaBrowserUiState
 import com.example.ui.viewmodel.NovaModal
@@ -40,6 +41,8 @@ class MainActivity : ComponentActivity() {
             val history by viewModel.historyState.collectAsStateWithLifecycle()
             val bookmarks by viewModel.bookmarksState.collectAsStateWithLifecycle()
             val downloads by viewModel.downloadsState.collectAsStateWithLifecycle()
+            val readingList by viewModel.readingListState.collectAsStateWithLifecycle()
+            val contextMenu by viewModel.contextMenuState.collectAsStateWithLifecycle()
 
             val state = uiState
             val activeTab = state.tabs.firstOrNull { it.id == state.activeTabId }
@@ -74,6 +77,8 @@ class MainActivity : ComponentActivity() {
                         history = history,
                         bookmarks = bookmarks,
                         downloads = downloads,
+                        readingList = readingList,
+                        contextMenu = contextMenu,
                         webController = webController,
                         viewModel = viewModel,
                         activeTab = activeTab
@@ -92,6 +97,8 @@ private fun NavHost(
     history: List<com.example.data.HistoryEntity>,
     bookmarks: List<com.example.data.BookmarkEntity>,
     downloads: List<com.example.data.DownloadEntity>,
+    readingList: List<com.example.data.ReadingListEntity>,
+    contextMenu: ContextMenuState,
     webController: WebViewController,
     viewModel: NovaBrowserViewModel,
     activeTab: com.example.ui.viewmodel.BrowserTabState?
@@ -103,6 +110,8 @@ private fun NavHost(
                 activeTab = activeTab,
                 history = history,
                 bookmarks = bookmarks,
+                readingList = readingList,
+                contextMenu = contextMenu,
                 webController = webController,
                 viewModel = viewModel,
                 onNavigate = onNavigate
@@ -134,6 +143,15 @@ private fun NavHost(
                 onBack = { onNavigate(NovaScreen.BROWSER) }
             )
         }
+        NovaScreen.READING_LIST -> {
+            ReadingListScreen(
+                items = readingList,
+                onOpen = { viewModel.loadUrl(it) },
+                onDelete = viewModel::removeReadingList,
+                onClearAll = viewModel::clearReadingList,
+                onBack = { onNavigate(NovaScreen.BROWSER) }
+            )
+        }
         NovaScreen.SETTINGS -> {
             SettingsScreen(
                 settings = state.settings,
@@ -151,6 +169,8 @@ private fun BrowserScreen(
     activeTab: com.example.ui.viewmodel.BrowserTabState?,
     history: List<com.example.data.HistoryEntity>,
     bookmarks: List<com.example.data.BookmarkEntity>,
+    readingList: List<com.example.data.ReadingListEntity>,
+    contextMenu: ContextMenuState,
     webController: WebViewController,
     viewModel: NovaBrowserViewModel,
     onNavigate: (NovaScreen) -> Unit
@@ -161,6 +181,7 @@ private fun BrowserScreen(
     val currentUrl = activeTab?.url ?: state.settings.homepage
     val isHome = currentUrl.startsWith("nova://home") || currentUrl.isBlank()
     val isBookmarked = bookmarks.any { it.url == currentUrl && !currentUrl.startsWith("nova://") }
+    val isInReadingList = readingList.any { it.url == currentUrl }
 
     Scaffold(
         bottomBar = {
@@ -182,6 +203,12 @@ private fun BrowserScreen(
                     icon = Icons.Filled.Bookmark,
                     label = "Bookmarks",
                     onClick = { onNavigate(NovaScreen.BOOKMARKS) }
+                )
+                BottomNavItem(
+                    selected = state.screen == NovaScreen.READING_LIST,
+                    icon = Icons.Filled.Article,
+                    label = "Reading",
+                    onClick = { onNavigate(NovaScreen.READING_LIST) }
                 )
                 BottomNavItem(
                     selected = state.screen == NovaScreen.DOWNLOADS,
@@ -279,7 +306,8 @@ private fun BrowserScreen(
                             onDownload = viewModel::onDownload,
                             onError = viewModel::onError,
                             onNavigationStateChanged = viewModel::onNavigationStateChanged,
-                            onFindResult = viewModel::onFindResult
+                            onFindResult = viewModel::onFindResult,
+                            onContextMenu = viewModel::showContextMenu
                         )
                     }
                 }
@@ -333,7 +361,18 @@ private fun BrowserScreen(
                         )
                     }
                 }
-                NovaModal.MENU, NovaModal.NONE -> { /* handled by toolbar */ }
+                NovaModal.MENU -> {
+                    if (contextMenu.isVisible) {
+                        ContextMenuSheet(
+                            state = contextMenu,
+                            isBookmarked = isBookmarked,
+                            isInReadingList = isInReadingList,
+                            viewModel = viewModel,
+                            onDismiss = { viewModel.dismissContextMenu() }
+                        )
+                    }
+                }
+                NovaModal.NONE -> { /* handled by toolbar */ }
             }
         }
     }

@@ -89,3 +89,24 @@ interface DownloadDao {
     @Query("DELETE FROM downloads")
     suspend fun clearAllDownloads()
 }
+
+@Dao
+interface ReadingListDao {
+    @Query("SELECT * FROM reading_list ORDER BY savedAt DESC")
+    fun getAllReadingList(): Flow<List<ReadingListEntity>>
+
+    @Query("SELECT * FROM reading_list WHERE url = :url LIMIT 1")
+    suspend fun findByUrl(url: String): ReadingListEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertReadingList(item: ReadingListEntity)
+
+    @Query("DELETE FROM reading_list WHERE id = :id")
+    suspend fun deleteReadingListById(id: Long)
+
+    @Query("DELETE FROM reading_list WHERE url = :url")
+    suspend fun deleteReadingListByUrl(url: String)
+
+    @Query("DELETE FROM reading_list")
+    suspend fun clearAllReadingList()
+}

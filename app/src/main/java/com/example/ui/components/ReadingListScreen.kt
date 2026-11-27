@@ -72,7 +72,7 @@ fun ReadingListScreen(
                 placeholder = { Text("Search reading list") },
                 leadingIcon = { Icon(Icons.Filled.Article, contentDescription = null) },
                 shapes = listOf(RoundedCornerShape(24.dp)),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
+                colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                 )

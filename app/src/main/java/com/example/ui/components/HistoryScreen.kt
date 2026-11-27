@@ -68,7 +68,7 @@ fun HistoryScreen(
                 placeholder = { Text("Search history") },
                 leadingIcon = { Icon(Icons.Filled.History, contentDescription = null) },
                 shapes = listOf(RoundedCornerShape(24.dp)),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
+                colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                 )

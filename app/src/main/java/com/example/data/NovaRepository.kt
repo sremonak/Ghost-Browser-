@@ -13,6 +13,7 @@ class NovaRepository(private val database: NovaDatabase) {
     val allTabs: Flow<List<TabEntity>> = database.tabDao().getAllTabs()
     val allTabGroups: Flow<List<TabGroupEntity>> = database.tabGroupDao().getAllTabGroups()
     val allDownloads: Flow<List<DownloadEntity>> = database.downloadDao().getAllDownloads()
+    val allReadingList: Flow<List<ReadingListEntity>> = database.readingListDao().getAllReadingList()
 
     // ------------------------------------------------------------------ history
 
@@ -62,6 +63,22 @@ class NovaRepository(private val database: NovaDatabase) {
     suspend fun removeDownload(id: Long) = database.downloadDao().deleteDownloadById(id)
     suspend fun clearDownloads() = database.downloadDao().clearAllDownloads()
 
+    // -------------------------------------------------------------- reading list
+
+    suspend fun addReadingList(title: String, url: String) {
+        database.readingListDao().insertReadingList(
+            ReadingListEntity(
+                title = if (title.isBlank()) url else title,
+                url = url,
+                domain = domainOf(url)
+            )
+        )
+    }
+
+    suspend fun removeReadingList(id: Long) = database.readingListDao().deleteReadingListById(id)
+    suspend fun removeReadingListByUrl(url: String) = database.readingListDao().deleteReadingListByUrl(url)
+    suspend fun clearReadingList() = database.readingListDao().clearAllReadingList()
+
     // ------------------------------------------------------------------ helpers
 
     /**
@@ -72,6 +89,7 @@ class NovaRepository(private val database: NovaDatabase) {
         database.bookmarkDao().clearAllBookmarks()
         database.downloadDao().clearAllDownloads()
         database.tabDao().clearAllTabs()
+        database.readingListDao().clearAllReadingList()
     }
 
     private fun domainOf(url: String): String {

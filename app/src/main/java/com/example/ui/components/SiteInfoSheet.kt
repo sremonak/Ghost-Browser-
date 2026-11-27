@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -146,4 +147,4 @@ private fun ActionRow(
 
 @Composable
 private fun Modifier.clickableSafe(onClick: () -> Unit): Modifier =
-    this.androidx.compose.foundation.clickable(onClick = onClick)
+    this.clickable(onClick = onClick)

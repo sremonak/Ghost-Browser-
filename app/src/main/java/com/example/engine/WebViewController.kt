@@ -41,9 +41,10 @@ class WebViewController(private val context: Context) {
     var onDownload: ((String, String, String, String) -> Unit)? = null
     var onError: ((String) -> Unit)? = null
     var onFindResult: ((Int) -> Unit)? = null
+    var onContextMenu: ((url: String, selection: String, imageUrl: String) -> Unit)? = null
 
     // Per-tab saved state, keyed by tab id.
-    private val savedStates = mutableMapOf<String, Bundle>()
+    private val savedStates = mutableMapOf<String, android.webkit.WebBackForwardList>()
 
     private var currentUserAgent: UserAgentMode = UserAgentMode.CHROME_MOBILE
     private var customUserAgent: String = ""
@@ -145,7 +146,7 @@ class WebViewController(private val context: Context) {
                     val isMainFrame = request?.isForMainFrame == true
                     if (isMainFrame) {
                         onLoadingChanged?.invoke(false, 0f)
-                        onError?.invoke(error?.description ?: "Connection failed")
+                        onError?.invoke((error?.description ?: "Connection failed").toString())
                     }
                 }
             }
@@ -181,6 +182,26 @@ class WebViewController(private val context: Context) {
                 }
             }
 
+            // Long-press opens the Chrome-style context menu. The hit test
+            // result tells us whether the user pressed a link, an image or
+            // plain text; the selection text is read from the page.
+            view.setOnLongClickListener { v ->
+                val hit = v.hitTestResult
+                val imageUrl = hit?.extra?.takeIf { hit.type == WebView.HitTestResult.IMAGE_TYPE } ?: ""
+                val linkUrl = hit?.extra?.takeIf {
+                    hit.type == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
+                        hit.type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE
+                } ?: ""
+                v.evaluateJavascript("window.getSelection() ? window.getSelection().toString() : ''") { selection ->
+                    onContextMenu?.invoke(
+                        url = linkUrl.ifBlank { currentLoadedUrl },
+                        selection = selection?.removeSurrounding("\"") ?: "",
+                        imageUrl = imageUrl
+                    )
+                }
+                true
+            }
+
             view.setDownloadListener { downloadUrl, userAgent, contentDisposition, mimetype, _ ->
                 val info = DownloadHelper.enqueue(
                     context,
@@ -194,7 +215,6 @@ class WebViewController(private val context: Context) {
 
             CookieManager.getInstance().apply {
                 setAcceptCookie(true)
-                setAcceptFileSchemeCookies(true)
                 if (blockThirdPartyCookies) {
                     setAcceptThirdPartyCookies(view, false)
                 }
@@ -244,7 +264,7 @@ class WebViewController(private val context: Context) {
     fun saveTabState(tabId: String) {
         webView?.let { view ->
             try {
-                savedStates[tabId] = view.saveState()
+                view.saveState()?.let { snapshot -> savedStates[tabId] = snapshot }
             } catch (e: Exception) {
                 // Ignore save failures — a fresh load is always possible.
             }
@@ -258,7 +278,7 @@ class WebViewController(private val context: Context) {
     fun restoreTabState(tabId: String): Boolean {
         val snapshot = savedStates[tabId] ?: return false
         return try {
-            webView?.restoreState(snapshot) != null
+            webView?.restoreState(snapshot) == true
         } catch (e: Exception) {
             false
         }

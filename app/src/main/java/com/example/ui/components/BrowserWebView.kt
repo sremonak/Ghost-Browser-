@@ -37,6 +37,7 @@ fun BrowserWebView(
     onError: (String) -> Unit,
     onNavigationStateChanged: (Boolean, Boolean) -> Unit,
     onFindResult: (Int) -> Unit,
+    onContextMenu: (String, String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var createdView by remember { mutableStateOf<android.webkit.WebView?>(null) }
@@ -62,6 +63,7 @@ fun BrowserWebView(
                 webController.onDownload = onDownload
                 webController.onError = onError
                 webController.onFindResult = onFindResult
+                webController.onContextMenu = onContextMenu
 
                 createdView = view
 
