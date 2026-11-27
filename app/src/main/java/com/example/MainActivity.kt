@@ -416,7 +416,7 @@ private fun BottomNavItem(
         onClick = onClick,
         modifier = Modifier
             .height(52.dp)
-            .weight(1f),
+            .fillMaxWidth(),
         shape = RoundedCornerShape(0.dp),
         colors = if (selected) {
             ButtonDefaults.buttonColors(
