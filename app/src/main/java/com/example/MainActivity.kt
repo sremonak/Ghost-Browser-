@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -389,7 +388,6 @@ private fun BrowserScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BottomNavItem(
     selected: Boolean,
@@ -397,10 +395,16 @@ private fun BottomNavItem(
     label: String,
     onClick: () -> Unit
 ) {
-    NavigationBarItem(
-        selected = selected,
+    Button(
         onClick = onClick,
-        icon = { Icon(icon, contentDescription = label) },
-        label = { Text(label, style = MaterialTheme.typography.labelSmall) }
-    )
+        colors = if (selected) {
+            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        } else {
+            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        }
+    ) {
+        Icon(icon, contentDescription = label, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall)
+    }
 }

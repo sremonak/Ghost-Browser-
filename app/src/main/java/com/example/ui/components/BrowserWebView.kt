@@ -71,12 +71,11 @@ fun BrowserWebView(
                 // On a tab switch, stop any in-flight load and navigate
                 // to the target URL.
                 val webView = view as android.webkit.WebView
+                webView.stopLoading()
                 if (boundTabId != tabId) {
                     boundTabId = tabId
-                    if (webView.isLoading()) webView.stopLoading()
                     webView.loadUrl(url)
                 } else if (webView.url.isNullOrEmpty() || webView.url != url) {
-                    if (webView.isLoading()) webView.stopLoading()
                     webView.loadUrl(url)
                 }
             },
