@@ -44,7 +44,7 @@ class WebViewController(private val context: Context) {
     var onContextMenu: ((url: String, selection: String, imageUrl: String) -> Unit)? = null
 
     // Per-tab saved state, keyed by tab id.
-    private val savedStates = mutableMapOf<String, android.os.Bundle>()
+    private val savedStates = mutableMapOf<String, android.webkit.WebBackForwardList>()
 
     private var currentUserAgent: UserAgentMode = UserAgentMode.CHROME_MOBILE
     private var customUserAgent: String = ""
@@ -282,7 +282,7 @@ class WebViewController(private val context: Context) {
     fun restoreTabState(tabId: String): Boolean {
         val snapshot = savedStates[tabId] ?: return false
         return try {
-            webView?.restoreState(snapshot) == true
+            webView?.restoreState(snapshot) != null
         } catch (e: Exception) {
             false
         }

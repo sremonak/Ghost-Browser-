@@ -34,73 +34,70 @@ data class BrowserSettings(
 
 class NovaPreferences(private val context: Context) {
 
-    private val keys: Map<kotlin.reflect.KProperty1<BrowserSettings, *>, androidx.datastore.preferences.core.Preferences.Key<*>> =
-        mapOf(
-            BrowserSettings::isDarkTheme to booleanPreferencesKey("is_dark_theme"),
-            BrowserSettings::homepage to stringPreferencesKey("homepage"),
-            BrowserSettings::searchEngine to stringPreferencesKey("search_engine"),
-            BrowserSettings::adBlockEnabled to booleanPreferencesKey("ad_block_enabled"),
-            BrowserSettings::trackerBlockEnabled to booleanPreferencesKey("tracker_block_enabled"),
-            BrowserSettings::javascriptEnabled to booleanPreferencesKey("javascript_enabled"),
-            BrowserSettings::popupBlockerEnabled to booleanPreferencesKey("popup_blocker_enabled"),
-            BrowserSettings::blockThirdPartyCookies to booleanPreferencesKey("block_third_party_cookies"),
-            BrowserSettings::dataSaverEnabled to booleanPreferencesKey("data_saver_enabled"),
-            BrowserSettings::desktopModeDefault to booleanPreferencesKey("desktop_mode_default"),
-            BrowserSettings::restoreTabsOnStart to booleanPreferencesKey("restore_tabs_on_start"),
-            BrowserSettings::customUserAgent to stringPreferencesKey("custom_user_agent"),
-            BrowserSettings::userAgentMode to stringPreferencesKey("user_agent_mode")
-        )
+    private val isDarkThemeKey = booleanPreferencesKey("is_dark_theme")
+    private val homepageKey = stringPreferencesKey("homepage")
+    private val searchEngineKey = stringPreferencesKey("search_engine")
+    private val adBlockEnabledKey = booleanPreferencesKey("ad_block_enabled")
+    private val trackerBlockEnabledKey = booleanPreferencesKey("tracker_block_enabled")
+    private val javascriptEnabledKey = booleanPreferencesKey("javascript_enabled")
+    private val popupBlockerEnabledKey = booleanPreferencesKey("popup_blocker_enabled")
+    private val blockThirdPartyCookiesKey = booleanPreferencesKey("block_third_party_cookies")
+    private val dataSaverEnabledKey = booleanPreferencesKey("data_saver_enabled")
+    private val desktopModeDefaultKey = booleanPreferencesKey("desktop_mode_default")
+    private val restoreTabsOnStartKey = booleanPreferencesKey("restore_tabs_on_start")
+    private val customUserAgentKey = stringPreferencesKey("custom_user_agent")
+    private val userAgentModeKey = stringPreferencesKey("user_agent_mode")
 
     val settings: Flow<BrowserSettings> = context.novaPrefs.data.map { prefs ->
         BrowserSettings(
-            isDarkTheme = prefs[keys[BrowserSettings::isDarkTheme]!!] ?: true,
-            homepage = prefs[keys[BrowserSettings::homepage]!!] ?: "nova://home",
-            searchEngine = prefs[keys[BrowserSettings::searchEngine]!!] ?: "Google",
-            adBlockEnabled = prefs[keys[BrowserSettings::adBlockEnabled]!!] ?: true,
-            trackerBlockEnabled = prefs[keys[BrowserSettings::trackerBlockEnabled]!!] ?: true,
-            javascriptEnabled = prefs[keys[BrowserSettings::javascriptEnabled]!!] ?: true,
-            popupBlockerEnabled = prefs[keys[BrowserSettings::popupBlockerEnabled]!!] ?: true,
-            blockThirdPartyCookies = prefs[keys[BrowserSettings::blockThirdPartyCookies]!!] ?: true,
-            dataSaverEnabled = prefs[keys[BrowserSettings::dataSaverEnabled]!!] ?: false,
-            desktopModeDefault = prefs[keys[BrowserSettings::desktopModeDefault]!!] ?: false,
-            restoreTabsOnStart = prefs[keys[BrowserSettings::restoreTabsOnStart]!!] ?: true,
-            customUserAgent = prefs[keys[BrowserSettings::customUserAgent]!!] ?: "",
-            userAgentMode = prefs[keys[BrowserSettings::userAgentMode]!!] ?: "CHROME_MOBILE"
+            isDarkTheme = prefs[isDarkThemeKey] ?: true,
+            homepage = prefs[homepageKey] ?: "nova://home",
+            searchEngine = prefs[searchEngineKey] ?: "Google",
+            adBlockEnabled = prefs[adBlockEnabledKey] ?: true,
+            trackerBlockEnabled = prefs[trackerBlockEnabledKey] ?: true,
+            javascriptEnabled = prefs[javascriptEnabledKey] ?: true,
+            popupBlockerEnabled = prefs[popupBlockerEnabledKey] ?: true,
+            blockThirdPartyCookies = prefs[blockThirdPartyCookiesKey] ?: true,
+            dataSaverEnabled = prefs[dataSaverEnabledKey] ?: false,
+            desktopModeDefault = prefs[desktopModeDefaultKey] ?: false,
+            restoreTabsOnStart = prefs[restoreTabsOnStartKey] ?: true,
+            customUserAgent = prefs[customUserAgentKey] ?: "",
+            userAgentMode = prefs[userAgentModeKey] ?: "CHROME_MOBILE"
         )
     }
 
     suspend fun update(transform: (BrowserSettings) -> BrowserSettings) {
         context.novaPrefs.edit { prefs ->
             val current = transform(readCurrent(prefs))
-            prefs[keys[BrowserSettings::isDarkTheme]!!] = current.isDarkTheme
-            prefs[keys[BrowserSettings::homepage]!!] = current.homepage
-            prefs[keys[BrowserSettings::searchEngine]!!] = current.searchEngine
-            prefs[keys[BrowserSettings::adBlockEnabled]!!] = current.adBlockEnabled
-            prefs[keys[BrowserSettings::trackerBlockEnabled]!!] = current.trackerBlockEnabled
-            prefs[keys[BrowserSettings::javascriptEnabled]!!] = current.javascriptEnabled
-            prefs[keys[BrowserSettings::popupBlockerEnabled]!!] = current.popupBlockerEnabled
-            prefs[keys[BrowserSettings::blockThirdPartyCookies]!!] = current.blockThirdPartyCookies
-            prefs[keys[BrowserSettings::dataSaverEnabled]!!] = current.dataSaverEnabled
-            prefs[keys[BrowserSettings::desktopModeDefault]!!] = current.desktopModeDefault
-            prefs[keys[BrowserSettings::restoreTabsOnStart]!!] = current.restoreTabsOnStart
-            prefs[keys[BrowserSettings::customUserAgent]!!] = current.customUserAgent
-            prefs[keys[BrowserSettings::userAgentMode]!!] = current.userAgentMode
+            prefs[isDarkThemeKey] = current.isDarkTheme
+            prefs[homepageKey] = current.homepage
+            prefs[searchEngineKey] = current.searchEngine
+            prefs[adBlockEnabledKey] = current.adBlockEnabled
+            prefs[trackerBlockEnabledKey] = current.trackerBlockEnabled
+            prefs[javascriptEnabledKey] = current.javascriptEnabled
+            prefs[popupBlockerEnabledKey] = current.popupBlockerEnabled
+            prefs[blockThirdPartyCookiesKey] = current.blockThirdPartyCookies
+            prefs[dataSaverEnabledKey] = current.dataSaverEnabled
+            prefs[desktopModeDefaultKey] = current.desktopModeDefault
+            prefs[restoreTabsOnStartKey] = current.restoreTabsOnStart
+            prefs[customUserAgentKey] = current.customUserAgent
+            prefs[userAgentModeKey] = current.userAgentMode
         }
     }
 
     private fun readCurrent(prefs: Preferences): BrowserSettings = BrowserSettings(
-        isDarkTheme = prefs[keys[BrowserSettings::isDarkTheme]!!] ?: true,
-        homepage = prefs[keys[BrowserSettings::homepage]!!] ?: "nova://home",
-        searchEngine = prefs[keys[BrowserSettings::searchEngine]!!] ?: "Google",
-        adBlockEnabled = prefs[keys[BrowserSettings::adBlockEnabled]!!] ?: true,
-        trackerBlockEnabled = prefs[keys[BrowserSettings::trackerBlockEnabled]!!] ?: true,
-        javascriptEnabled = prefs[keys[BrowserSettings::javascriptEnabled]!!] ?: true,
-        popupBlockerEnabled = prefs[keys[BrowserSettings::popupBlockerEnabled]!!] ?: true,
-        blockThirdPartyCookies = prefs[keys[BrowserSettings::blockThirdPartyCookies]!!] ?: true,
-        dataSaverEnabled = prefs[keys[BrowserSettings::dataSaverEnabled]!!] ?: false,
-        desktopModeDefault = prefs[keys[BrowserSettings::desktopModeDefault]!!] ?: false,
-        restoreTabsOnStart = prefs[keys[BrowserSettings::restoreTabsOnStart]!!] ?: true,
-        customUserAgent = prefs[keys[BrowserSettings::customUserAgent]!!] ?: "",
-        userAgentMode = prefs[keys[BrowserSettings::userAgentMode]!!] ?: "CHROME_MOBILE"
+        isDarkTheme = prefs[isDarkThemeKey] ?: true,
+        homepage = prefs[homepageKey] ?: "nova://home",
+        searchEngine = prefs[searchEngineKey] ?: "Google",
+        adBlockEnabled = prefs[adBlockEnabledKey] ?: true,
+        trackerBlockEnabled = prefs[trackerBlockEnabledKey] ?: true,
+        javascriptEnabled = prefs[javascriptEnabledKey] ?: true,
+        popupBlockerEnabled = prefs[popupBlockerEnabledKey] ?: true,
+        blockThirdPartyCookies = prefs[blockThirdPartyCookiesKey] ?: true,
+        dataSaverEnabled = prefs[dataSaverEnabledKey] ?: false,
+        desktopModeDefault = prefs[desktopModeDefaultKey] ?: false,
+        restoreTabsOnStart = prefs[restoreTabsOnStartKey] ?: true,
+        customUserAgent = prefs[customUserAgentKey] ?: "",
+        userAgentMode = prefs[userAgentModeKey] ?: "CHROME_MOBILE"
     )
 }
