@@ -114,11 +114,11 @@ class WebViewController(private val context: Context) {
                  * Proceeding would expose users to man-in-the-middle attacks.
                  */
                 override fun onReceivedSslError(
-                    view: WebView?,
-                    handler: android.webkit.SslErrorHandler?,
-                    error: android.webkit.SslError?
+                    view: WebView!,
+                    handler: android.webkit.SslErrorHandler!,
+                    error: android.webkit.SslError!
                 ) {
-                    handler?.cancel()
+                    handler.cancel()
                     onError?.invoke("SSL certificate error")
                 }
 

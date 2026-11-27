@@ -517,7 +517,7 @@ class NovaBrowserViewModel(application: Application) : AndroidViewModel(applicat
                 // Remove only cookies for the given domain, not all cookies.
                 CookieManager.getInstance().removeAllCookies(null)
                 // Also flush the WebView's per-site storage.
-                it.view?.webStorage?.clearAllData()
+                android.webkit.WebStorage.getInstance().clearAllData()
                 it.view?.clearHistory()
             }
         }
