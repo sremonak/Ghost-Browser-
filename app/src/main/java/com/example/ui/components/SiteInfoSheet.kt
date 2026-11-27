@@ -66,7 +66,7 @@ fun SiteInfoSheet(
                     AssistChip(
                         onClick = {},
                         label = { Text("Incognito") },
-                        leadingIcon = { Icon(Icons.Filled.Incognito, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(18.dp)) }
                     )
                 }
             }

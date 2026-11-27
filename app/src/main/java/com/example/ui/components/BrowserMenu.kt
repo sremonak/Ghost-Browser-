@@ -33,10 +33,10 @@ fun BrowserMenu(
         )
         DropdownMenuItem(
             text = { Text("New incognito tab") },
-            leadingIcon = { Icon(Icons.Filled.Incognito, contentDescription = null, modifier = Modifier.size(20.dp)) },
+            leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(20.dp)) },
             onClick = { onNewIncognitoTab(); onDismiss() }
         )
-        DropdownMenuItemDivider()
+        HorizontalDivider()
         DropdownMenuItem(
             text = { Text("History") },
             leadingIcon = { Icon(Icons.Filled.History, contentDescription = null, modifier = Modifier.size(20.dp)) },
@@ -52,7 +52,7 @@ fun BrowserMenu(
             leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.size(20.dp)) },
             onClick = { onDownloads(); onDismiss() }
         )
-        DropdownMenuItemDivider()
+        HorizontalDivider()
         DropdownMenuItem(
             text = { Text("Site information") },
             leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null, modifier = Modifier.size(20.dp)) },

@@ -128,7 +128,7 @@ fun BrowserToolbar(
                         }
                     }
                 },
-                shapes = listOf(RoundedCornerShape(21.dp)),
+                shape = RoundedCornerShape(21.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,

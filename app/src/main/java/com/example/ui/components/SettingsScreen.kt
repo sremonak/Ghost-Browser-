@@ -211,7 +211,7 @@ fun SettingsScreen(
                     control = {
                         TextButton(
                             onClick = { viewModel.clearBrowsingData() },
-                            colors = TextButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
                             Text("Clear")
                         }
@@ -244,7 +244,7 @@ private fun DropdownChoice(
     onSelect: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    DropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+    Box {
         TextButton(onClick = { expanded = true }) {
             Text(value, maxLines = 1)
         }

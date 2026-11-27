@@ -34,23 +34,22 @@ data class BrowserSettings(
 
 class NovaPreferences(private val context: Context) {
 
-    private val keys = {
+    private val keys: Map<kotlin.reflect.KProperty1<BrowserSettings, *>, androidx.datastore.preferences.core.Preferences.Key<*>> =
         mapOf(
-            isDarkTheme to booleanPreferencesKey("is_dark_theme"),
-            homepage to stringPreferencesKey("homepage"),
-            searchEngine to stringPreferencesKey("search_engine"),
-            adBlockEnabled to booleanPreferencesKey("ad_block_enabled"),
-            trackerBlockEnabled to booleanPreferencesKey("tracker_block_enabled"),
-            javascriptEnabled to booleanPreferencesKey("javascript_enabled"),
-            popupBlockerEnabled to booleanPreferencesKey("popup_blocker_enabled"),
-            blockThirdPartyCookies to booleanPreferencesKey("block_third_party_cookies"),
-            dataSaverEnabled to booleanPreferencesKey("data_saver_enabled"),
-            desktopModeDefault to booleanPreferencesKey("desktop_mode_default"),
-            restoreTabsOnStart to booleanPreferencesKey("restore_tabs_on_start"),
-            customUserAgent to stringPreferencesKey("custom_user_agent"),
-            userAgentMode to stringPreferencesKey("user_agent_mode")
+            BrowserSettings::isDarkTheme to booleanPreferencesKey("is_dark_theme"),
+            BrowserSettings::homepage to stringPreferencesKey("homepage"),
+            BrowserSettings::searchEngine to stringPreferencesKey("search_engine"),
+            BrowserSettings::adBlockEnabled to booleanPreferencesKey("ad_block_enabled"),
+            BrowserSettings::trackerBlockEnabled to booleanPreferencesKey("tracker_block_enabled"),
+            BrowserSettings::javascriptEnabled to booleanPreferencesKey("javascript_enabled"),
+            BrowserSettings::popupBlockerEnabled to booleanPreferencesKey("popup_blocker_enabled"),
+            BrowserSettings::blockThirdPartyCookies to booleanPreferencesKey("block_third_party_cookies"),
+            BrowserSettings::dataSaverEnabled to booleanPreferencesKey("data_saver_enabled"),
+            BrowserSettings::desktopModeDefault to booleanPreferencesKey("desktop_mode_default"),
+            BrowserSettings::restoreTabsOnStart to booleanPreferencesKey("restore_tabs_on_start"),
+            BrowserSettings::customUserAgent to stringPreferencesKey("custom_user_agent"),
+            BrowserSettings::userAgentMode to stringPreferencesKey("user_agent_mode")
         )
-    }()
 
     val settings: Flow<BrowserSettings> = context.novaPrefs.data.map { prefs ->
         BrowserSettings(

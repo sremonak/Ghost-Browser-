@@ -51,17 +51,15 @@ object DownloadHelper {
 
     fun statusOf(context: Context, downloadId: Long): Int {
         val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val cursor: android.database.Cursor? = manager.query(
-            DownloadManager.COLUMN_ID + "=?",
-            arrayOf(downloadId.toString())
-        )
         return try {
-            cursor?.use { c ->
-                if (c.moveToFirst()) {
-                    val index = c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)
-                    if (index >= 0) c.getInt(index) else -1
-                } else -1
-            } ?: -1
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                manager.query(DownloadManager.Query().setFilterById(downloadId))?.use { c ->
+                    if (c.moveToFirst()) {
+                        val index = c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)
+                        if (index >= 0) c.getInt(index) else -1
+                    } else -1
+                } ?: -1
+            } else -1
         } catch (e: Exception) {
             -1
         }

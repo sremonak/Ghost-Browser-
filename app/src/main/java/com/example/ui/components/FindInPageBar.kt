@@ -40,11 +40,10 @@ fun FindInPageBar(
                 textStyle = MaterialTheme.typography.bodyMedium,
                 placeholder = { Text("Find in page") },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                shapes = listOf(RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    containerColor = MaterialTheme.colorScheme.surface
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                 )
             )
             Spacer(Modifier.width(8.dp))

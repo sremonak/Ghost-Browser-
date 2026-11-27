@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Incognito
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -91,7 +90,7 @@ fun TabSwitcher(
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
                 ) {
-                    Icon(Icons.Filled.Incognito, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("Incognito")
                 }
@@ -117,7 +116,7 @@ fun TabSwitcher(
                                     modifier = Modifier
                                         .size(10.dp)
                                         .clip(RoundedCornerShape(50))
-                                        .background(Color(group.colorHex))
+                                        .background(Color(android.graphics.Color.parseColor(group.colorHex)))
                                 )
                             }
                         )

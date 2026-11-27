@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -77,14 +78,14 @@ fun BrowserWebView(
 
                 // Restore a previously saved tab snapshot when available;
                 // otherwise load the target URL.
-                if (view.url.isEmpty()) {
+                if (view.url.isNullOrEmpty()) {
                     if (!webController.restoreTabState(tabId)) {
                         view.loadUrl(url)
                     }
                 } else if (view.url != url) {
                     // Stop any in-flight load of the previous page before
                     // navigating to the new URL.
-                    if (view.isLoading) view.stopLoading()
+                    if (view.isLoading()) view.stopLoading()
                     view.loadUrl(url)
                 }
             },

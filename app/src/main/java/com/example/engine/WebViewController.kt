@@ -44,7 +44,7 @@ class WebViewController(private val context: Context) {
     var onContextMenu: ((url: String, selection: String, imageUrl: String) -> Unit)? = null
 
     // Per-tab saved state, keyed by tab id.
-    private val savedStates = mutableMapOf<String, android.webkit.WebBackForwardList>()
+    private val savedStates = mutableMapOf<String, android.os.Bundle>()
 
     private var currentUserAgent: UserAgentMode = UserAgentMode.CHROME_MOBILE
     private var customUserAgent: String = ""
@@ -185,18 +185,22 @@ class WebViewController(private val context: Context) {
             // Long-press opens the Chrome-style context menu. The hit test
             // result tells us whether the user pressed a link, an image or
             // plain text; the selection text is read from the page.
-            view.setOnLongClickListener { v ->
-                val hit = v.hitTestResult
-                val imageUrl = hit?.extra?.takeIf { hit.type == WebView.HitTestResult.IMAGE_TYPE } ?: ""
-                val linkUrl = hit?.extra?.takeIf {
-                    hit.type == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
+            view.setOnLongClickListener {
+                val hit = view.hitTestResult
+                val imageUrl = if (hit != null && hit.type == WebView.HitTestResult.IMAGE_TYPE) {
+                    hit.extra ?: ""
+                } else ""
+                val linkUrl = if (hit != null && (
+                        hit.type == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
                         hit.type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE
-                } ?: ""
-                v.evaluateJavascript("window.getSelection() ? window.getSelection().toString() : ''") { selection ->
+                    )) {
+                    hit.extra ?: ""
+                } else ""
+                view.evaluateJavascript("window.getSelection() ? window.getSelection().toString() : ''") { selection ->
                     onContextMenu?.invoke(
-                        url = linkUrl.ifBlank { currentLoadedUrl },
-                        selection = selection?.removeSurrounding("\"") ?: "",
-                        imageUrl = imageUrl
+                        linkUrl.ifBlank { currentLoadedUrl },
+                        selection?.removeSurrounding("\"") ?: "",
+                        imageUrl
                     )
                 }
                 true

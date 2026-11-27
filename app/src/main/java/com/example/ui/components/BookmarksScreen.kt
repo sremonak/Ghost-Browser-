@@ -64,7 +64,7 @@ fun BookmarksScreen(
                 textStyle = MaterialTheme.typography.bodyMedium,
                 placeholder = { Text("Search bookmarks") },
                 leadingIcon = { Icon(Icons.Filled.BookmarkBorder, contentDescription = null) },
-                shapes = listOf(RoundedCornerShape(24.dp)),
+                shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
@@ -87,8 +87,9 @@ fun BookmarksScreen(
                 folders.forEach { folder ->
                     FilterChip(
                         selected = activeFolder == folder,
-                        onClick = { activeFolder = folder }
-                    ) { Text(folder) }
+                        onClick = { activeFolder = folder },
+                        label = { Text(folder) }
+                    )
                 }
             }
             Spacer(Modifier.height(12.dp))
