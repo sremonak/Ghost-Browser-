@@ -1,6 +1,5 @@
 package com.example.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -43,19 +42,25 @@ fun HomeScreen(
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(32.dp))
 
-        // Brand
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center
+        // Brand logo with gradient-like surface
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(64.dp)
         ) {
-            Icon(Icons.Filled.Public, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(34.dp))
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Filled.Public,
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
         }
-        Spacer(Modifier.height(12.dp))
+
+        Spacer(Modifier.height(14.dp))
         Text(
             text = "Nova Browser",
             style = MaterialTheme.typography.headlineMedium,
@@ -65,10 +70,11 @@ fun HomeScreen(
         Text(
             text = "Fast, private, professional browsing",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp)
         )
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(36.dp))
 
         // Search box
         var query by remember { mutableStateOf("") }
@@ -78,11 +84,23 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth().height(52.dp),
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(22.dp)) },
+            leadingIcon = {
+                Icon(
+                    Icons.Filled.Search,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             trailingIcon = {
                 if (query.isNotEmpty()) {
                     IconButton(onClick = { query = "" }) {
-                        Icon(Icons.Filled.Clear, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Filled.Clear,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             },
@@ -106,20 +124,21 @@ fun HomeScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(36.dp))
 
         // Quick shortcuts
         Text(
             text = "Quick links",
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.align(Alignment.Start).padding(horizontal = 4.dp)
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(20.dp)
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             val shortcuts = listOf(
                 Shortcut("G", "Google", "https://www.google.com"),
@@ -137,19 +156,19 @@ fun HomeScreen(
                         .clickable { onNavigate(shortcut.url) }
                         .padding(10.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(56.dp)
                     ) {
-                        Text(
-                            text = shortcut.letter,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = shortcut.letter,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
@@ -163,11 +182,12 @@ fun HomeScreen(
 
         // Recent sites
         if (recentSites.isNotEmpty()) {
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(40.dp))
             Text(
                 text = "Recent sites",
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.align(Alignment.Start).padding(horizontal = 4.dp)
             )
             Spacer(Modifier.height(12.dp))
@@ -179,26 +199,26 @@ fun HomeScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(14.dp))
                             .clickable { onNavigate(site.url) }
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(9.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
-                            contentAlignment = Alignment.Center
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(40.dp)
                         ) {
-                            Text(
-                                text = site.domain.take(2).uppercase(),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = site.domain.take(2).uppercase(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
-                        Spacer(Modifier.width(14.dp))
+                        Spacer(Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = site.title,
@@ -213,7 +233,11 @@ fun HomeScreen(
                                 maxLines = 1
                             )
                         }
-                        Icon(Icons.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
                     }
                 }
             }

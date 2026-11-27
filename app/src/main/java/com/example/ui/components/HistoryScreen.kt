@@ -10,89 +10,88 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.data.HistoryEntity
+import com.example.data.HistoryEntry
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
-/**
- * Full browsing-history screen with search and per-item deletion.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    history: List<HistoryEntity>,
-    modifier: Modifier = Modifier,
+    history: List<HistoryEntry>,
     onOpen: (String) -> Unit,
-    onDelete: (Long) -> Unit,
+    onDelete: (String) -> Unit,
     onClearAll: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    var query by remember { mutableStateOf("") }
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("History") },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.History,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("History")
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 },
                 actions = {
                     if (history.isNotEmpty()) {
                         TextButton(onClick = onClearAll) {
-                            Text("Clear all", color = MaterialTheme.colorScheme.error)
+                            Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Clear all")
                         }
                     }
                 }
             )
         }
     ) { padding ->
-        Column(
-            modifier = modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyMedium,
-                placeholder = { Text("Search history") },
-                leadingIcon = { Icon(Icons.Filled.History, contentDescription = null) },
-                shape = RoundedCornerShape(24.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                )
-            )
-            Spacer(Modifier.height(12.dp))
-
-            val filtered = history.filter {
-                query.isBlank() ||
-                    it.title.contains(query, ignoreCase = true) ||
-                    it.domain.contains(query, ignoreCase = true) ||
-                    it.url.contains(query, ignoreCase = true)
+        if (history.isEmpty()) {
+            HistoryEmptyState(modifier = modifier.padding(padding))
+        } else {
+            val grouped = history.groupBy {
+                val cal = Calendar.getInstance()
+                cal.timeInMillis = it.visitedAt
+                SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(cal.time)
             }
 
-            if (filtered.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No history found", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    items(filtered, key = { it.id }) { entry ->
-                        HistoryRow(entry = entry, onOpen = { onOpen(entry.url) }, onDelete = { onDelete(entry.id) })
+            LazyColumn(
+                modifier = modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                grouped.forEach { (day, entries) ->
+                    item {
+                        Text(
+                            text = day,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                        )
+                    }
+                    items(entries, key = { it.url }) { entry ->
+                        HistoryRow(entry, onOpen = { onOpen(entry.url) }, onDelete = { onDelete(entry.url) })
                     }
                 }
             }
@@ -101,39 +100,89 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun HistoryRow(entry: HistoryEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onOpen),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+private fun HistoryRow(entry: HistoryEntry, onOpen: () -> Unit, onDelete: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable(onClick = onOpen)
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Filled.History,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = entry.title.ifBlank { entry.domain },
+                    text = entry.title.ifBlank { entry.url },
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = entry.domain,
+                    text = entry.url,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = "Delete",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun HistoryEmptyState(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(72.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.History, contentDescription = null, modifier = Modifier.size(36.dp))
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "No history yet",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Pages you visit will appear here",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

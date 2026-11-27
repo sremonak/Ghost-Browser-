@@ -1,11 +1,10 @@
 package com.example.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Clear
@@ -22,14 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.engine.SearchEngines
 import com.example.ui.viewmodel.BrowserTabState
 
 /**
- * The browser address bar (omnibox) plus the surrounding navigation buttons.
- * Doubles as a search box: typed input that is not a URL is resolved through
- * the active search engine.
+ * The browser address bar (omnibox) plus surrounding navigation controls.
+ * Doubles as a search box: typed input that is not a URL is resolved
+ * through the active search engine.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,32 +53,39 @@ fun BrowserToolbar(
     Column(modifier = modifier.fillMaxWidth()) {
         // Progress indicator under the bar while a page is loading.
         if (isLoading && progress > 0f) {
-            Box(modifier = Modifier.fillMaxWidth().height(3.dp)) {
-                androidx.compose.foundation.layout.Box(
-                    modifier = Modifier
-                        .fillMaxWidth(if (progress >= 1f) 1f else progress.coerceIn(0.05f, 0.99f))
-                        .height(3.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primary,
-                            RoundedCornerShape(2.dp)
-                        )
-                )
-            }
+            LinearProgressIndicator(
+                progress = { progress.coerceIn(0.0f, 1.0f) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 52.dp)
+                .heightIn(min = 56.dp)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Navigation buttons
             IconButton(onClick = onGoBack, enabled = canGoBack) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = if (canGoBack) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = if (canGoBack) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                )
             }
             IconButton(onClick = onGoForward, enabled = canGoForward) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "Forward", tint = if (canGoForward) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Forward",
+                    tint = if (canGoForward) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                )
             }
             IconButton(onClick = if (isLoading) onStop else onReload) {
                 Icon(
@@ -92,21 +97,23 @@ fun BrowserToolbar(
 
             // Omnibox
             var text by remember(tab.url, tab.isIncognito) { mutableStateOf(displayText(tab.url)) }
+            val isSecure = SearchEngines.isSecureUrl(tab.url)
 
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
                 modifier = Modifier
                     .weight(1f)
-                    .height(42.dp),
+                    .height(44.dp),
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                 leadingIcon = {
                     Icon(
-                        if (SearchEngines.isSecureUrl(tab.url)) Icons.Filled.Lock else Icons.Filled.Search,
+                        if (isSecure) Icons.Filled.Lock else Icons.Filled.Search,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = if (SearchEngines.isSecureUrl(tab.url)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(20.dp),
+                        tint = if (isSecure) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 trailingIcon = {
@@ -115,23 +122,38 @@ fun BrowserToolbar(
                             Icon(
                                 if (isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
                                 contentDescription = "Bookmark",
-                                tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = if (isBookmarked) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         IconButton(onClick = onOpenTabs) {
-                            Text(
-                                text = "${tab.title.take(1).uppercase()}",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isIncognito) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
-                            )
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (isIncognito) MaterialTheme.colorScheme.tertiaryContainer
+                                else MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = if (isIncognito) MaterialTheme.colorScheme.onTertiaryContainer
+                                else MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(22.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = tab.title.take(1).uppercase().ifBlank { "N" },
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                         IconButton(onClick = onOpenMenu) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "Menu",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 },
-                shape = RoundedCornerShape(21.dp),
+                shape = RoundedCornerShape(22.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,

@@ -11,6 +11,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Article
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -185,40 +191,48 @@ private fun BrowserScreen(
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                tonalElevation = 0.dp
+            ) {
                 BottomNavItem(
                     selected = state.screen == NovaScreen.BROWSER,
                     icon = Icons.Filled.Public,
+                    outlinedIcon = Icons.Outlined.Public,
                     label = "Browser",
                     onClick = { onNavigate(NovaScreen.BROWSER) }
                 )
                 BottomNavItem(
                     selected = state.screen == NovaScreen.HISTORY,
                     icon = Icons.Filled.History,
+                    outlinedIcon = Icons.Outlined.History,
                     label = "History",
                     onClick = { onNavigate(NovaScreen.HISTORY) }
                 )
                 BottomNavItem(
                     selected = state.screen == NovaScreen.BOOKMARKS,
                     icon = Icons.Filled.Bookmark,
+                    outlinedIcon = Icons.Outlined.BookmarkBorder,
                     label = "Bookmarks",
                     onClick = { onNavigate(NovaScreen.BOOKMARKS) }
                 )
                 BottomNavItem(
                     selected = state.screen == NovaScreen.READING_LIST,
                     icon = Icons.Filled.Article,
+                    outlinedIcon = Icons.Outlined.Article,
                     label = "Reading",
                     onClick = { onNavigate(NovaScreen.READING_LIST) }
                 )
                 BottomNavItem(
                     selected = state.screen == NovaScreen.DOWNLOADS,
                     icon = Icons.Filled.Download,
+                    outlinedIcon = Icons.Outlined.Download,
                     label = "Downloads",
                     onClick = { onNavigate(NovaScreen.DOWNLOADS) }
                 )
                 BottomNavItem(
                     selected = state.screen == NovaScreen.SETTINGS,
                     icon = Icons.Filled.Settings,
+                    outlinedIcon = Icons.Outlined.Settings,
                     label = "Settings",
                     onClick = { onNavigate(NovaScreen.SETTINGS) }
                 )
@@ -392,19 +406,26 @@ private fun BrowserScreen(
 private fun BottomNavItem(
     selected: Boolean,
     icon: ImageVector,
+    outlinedIcon: ImageVector,
     label: String,
     onClick: () -> Unit
 ) {
-    Button(
+    NavigationBarItem(
+        selected = selected,
         onClick = onClick,
-        colors = if (selected) {
-            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-        } else {
-            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        icon = {
+            Icon(
+                imageVector = if (selected) icon else outlinedIcon,
+                contentDescription = label,
+                modifier = Modifier.size(24.dp)
+            )
+        },
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1
+            )
         }
-    ) {
-        Icon(icon, contentDescription = label, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall)
-    }
+    )
 }

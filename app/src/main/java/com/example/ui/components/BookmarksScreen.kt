@@ -8,104 +8,61 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.data.BookmarkEntity
+import com.example.data.Bookmark
 
-/**
- * Bookmarks browser: folder chips on top, list of bookmarks below.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookmarksScreen(
-    bookmarks: List<BookmarkEntity>,
-    modifier: Modifier = Modifier,
+    bookmarks: List<Bookmark>,
     onOpen: (String) -> Unit,
-    onDelete: (Long) -> Unit,
-    onBack: () -> Unit
+    onRemove: (String) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    var activeFolder by remember { mutableStateOf("All") }
-    val folders = remember(bookmarks) {
-        listOf("All") + bookmarks.map { it.folder }.distinct().sorted()
-    }
-
-    var query by remember { mutableStateOf("") }
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bookmarks") },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.Bookmark,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Bookmarks")
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 }
             )
         }
     ) { padding ->
-        Column(
-            modifier = modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyMedium,
-                placeholder = { Text("Search bookmarks") },
-                leadingIcon = { Icon(Icons.Filled.BookmarkBorder, contentDescription = null) },
-                shape = RoundedCornerShape(24.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                )
-            )
-            Spacer(Modifier.height(12.dp))
-
-            val filtered = bookmarks.filter {
-                val matchesFolder = activeFolder == "All" || it.folder == activeFolder
-                val matchesQuery = query.isBlank() ||
-                    it.title.contains(query, ignoreCase = true) ||
-                    it.url.contains(query, ignoreCase = true)
-                matchesFolder && matchesQuery
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+        if (bookmarks.isEmpty()) {
+            BookmarksEmptyState(modifier = modifier.padding(padding))
+        } else {
+            LazyColumn(
+                modifier = modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                folders.forEach { folder ->
-                    FilterChip(
-                        selected = activeFolder == folder,
-                        onClick = { activeFolder = folder },
-                        label = { Text(folder) }
-                    )
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-
-            if (filtered.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No bookmarks here", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    items(filtered, key = { it.id }) { entry ->
-                        BookmarkRow(entry = entry, onOpen = { onOpen(entry.url) }, onDelete = { onDelete(entry.id) })
-                    }
+                items(bookmarks, key = { it.url }) { bookmark ->
+                    BookmarkRow(bookmark, onOpen = { onOpen(bookmark.url) }, onRemove = { onRemove(bookmark.url) })
                 }
             }
         }
@@ -113,41 +70,89 @@ fun BookmarksScreen(
 }
 
 @Composable
-private fun BookmarkRow(entry: BookmarkEntity, onOpen: () -> Unit, onDelete: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onOpen),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+private fun BookmarkRow(bookmark: Bookmark, onOpen: () -> Unit, onRemove: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable(onClick = onOpen)
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Filled.Bookmark, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Filled.Bookmark,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = entry.title,
+                    text = bookmark.title,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = entry.url,
+                    text = bookmark.url,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            IconButton(onClick = onRemove, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Filled.BookmarkRemove,
+                    contentDescription = "Remove",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun BookmarksEmptyState(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(72.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Bookmark, contentDescription = null, modifier = Modifier.size(36.dp))
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "No bookmarks yet",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Tap the bookmark icon to save pages",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
