@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Clear
@@ -80,7 +81,7 @@ fun BrowserToolbar(
             }
             IconButton(onClick = onGoForward, enabled = canGoForward) {
                 Icon(
-                    Icons.Filled.ArrowForward,
+                    Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Forward",
                     tint = if (canGoForward) MaterialTheme.colorScheme.onSurface
                     else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
